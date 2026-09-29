@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
-import { FieldError, SubmitButton } from "@/components/auth/form-fields";
+import {
+  FieldError,
+  FormAlert,
+  SubmitButton,
+} from "@/components/auth/form-fields";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { signupAction } from "@/lib/auth/actions";
 
 export function SignupForm() {
@@ -11,29 +17,15 @@ export function SignupForm() {
 
   return (
     <form action={formAction} noValidate className="space-y-5">
-      {state.error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          {state.error}
-        </div>
-      )}
-      {state.message && (
-        <div
-          role="status"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800"
-        >
-          {state.message}
-        </div>
-      )}
+      {state.error && <FormAlert tone="error">{state.error}</FormAlert>}
+      {state.message && <FormAlert tone="success">{state.message}</FormAlert>}
 
       <div>
-        <label htmlFor="businessName" className="text-sm font-medium text-slate-700">
-          Business / tradesperson name{" "}
-          <span className="font-normal text-slate-400">(optional)</span>
-        </label>
-        <input
+        <Label htmlFor="businessName">
+          Business or tradesperson name{" "}
+          <span className="font-normal text-zinc-500">(optional)</span>
+        </Label>
+        <Input
           id="businessName"
           name="businessName"
           type="text"
@@ -43,7 +35,7 @@ export function SignupForm() {
           aria-describedby={
             state.fieldErrors?.businessName ? "business-name-error" : undefined
           }
-          className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="mt-1.5"
           placeholder="Smith Electrical"
         />
         <FieldError
@@ -53,10 +45,8 @@ export function SignupForm() {
       </div>
 
       <div>
-        <label htmlFor="email" className="text-sm font-medium text-slate-700">
-          Email
-        </label>
-        <input
+        <Label htmlFor="email">Email</Label>
+        <Input
           id="email"
           name="email"
           type="email"
@@ -64,17 +54,15 @@ export function SignupForm() {
           required
           aria-invalid={Boolean(state.fieldErrors?.email)}
           aria-describedby={state.fieldErrors?.email ? "email-error" : undefined}
-          className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="mt-1.5"
           placeholder="you@example.com"
         />
         <FieldError id="email-error" message={state.fieldErrors?.email} />
       </div>
 
       <div>
-        <label htmlFor="password" className="text-sm font-medium text-slate-700">
-          Password
-        </label>
-        <input
+        <Label htmlFor="password">Password</Label>
+        <Input
           id="password"
           name="password"
           type="password"
@@ -82,21 +70,18 @@ export function SignupForm() {
           required
           minLength={8}
           aria-invalid={Boolean(state.fieldErrors?.password)}
-          aria-describedby={state.fieldErrors?.password ? "password-error" : undefined}
-          className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-950 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          aria-describedby="password-help password-error"
+          className="mt-1.5"
         />
-        <p className="mt-1.5 text-xs text-slate-500">At least 8 characters.</p>
+        <p id="password-help" className="mt-1.5 text-xs text-zinc-500">
+          Use at least 8 characters.
+        </p>
         <FieldError id="password-error" message={state.fieldErrors?.password} />
       </div>
 
       <div>
-        <label
-          htmlFor="confirmPassword"
-          className="text-sm font-medium text-slate-700"
-        >
-          Confirm password
-        </label>
-        <input
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Input
           id="confirmPassword"
           name="confirmPassword"
           type="password"
@@ -106,7 +91,7 @@ export function SignupForm() {
           aria-describedby={
             state.fieldErrors?.confirmPassword ? "confirm-password-error" : undefined
           }
-          className="mt-1.5 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-950 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="mt-1.5"
         />
         <FieldError
           id="confirm-password-error"
@@ -116,9 +101,12 @@ export function SignupForm() {
 
       <SubmitButton>Create account</SubmitButton>
 
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-zinc-600">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-blue-700 hover:text-blue-800">
+        <Link
+          href="/login"
+          className="font-semibold text-brand-800 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+        >
           Sign in
         </Link>
       </p>

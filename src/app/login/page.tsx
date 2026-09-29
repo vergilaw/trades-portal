@@ -5,6 +5,8 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Sign in",
 };

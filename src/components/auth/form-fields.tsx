@@ -1,11 +1,9 @@
 import { useFormStatus } from "react-dom";
 
-type FieldErrorProps = {
-  id: string;
-  message?: string;
-};
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function FieldError({ id, message }: FieldErrorProps) {
+export function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
 
   return (
@@ -15,16 +13,34 @@ export function FieldError({ id, message }: FieldErrorProps) {
   );
 }
 
+export function FormAlert({
+  tone,
+  children,
+}: {
+  tone: "error" | "success";
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role={tone === "error" ? "alert" : "status"}
+      className={cn(
+        "rounded-lg border px-3.5 py-3 text-sm leading-5",
+        tone === "error"
+          ? "border-red-200 bg-red-50 text-red-700"
+          : "border-emerald-200 bg-emerald-50 text-emerald-800",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function SubmitButton({ children }: { children: React.ReactNode }) {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="flex h-11 w-full items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-    >
+    <Button type="submit" disabled={pending} className="w-full">
       {pending ? "Please wait…" : children}
-    </button>
+    </Button>
   );
 }

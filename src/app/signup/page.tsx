@@ -5,6 +5,8 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { SignupForm } from "@/components/auth/signup-form";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Create account",
 };

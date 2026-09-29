@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Brand } from "@/components/ui/brand";
+import { Card } from "@/components/ui/card";
 
 type AuthShellProps = {
   title: string;
@@ -8,28 +9,22 @@ type AuthShellProps = {
 
 export function AuthShell({ title, description, children }: AuthShellProps) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <div className="w-full max-w-md">
-        <Link
-          href="/"
-          className="mb-8 flex items-center justify-center gap-2 text-slate-950"
-          aria-label="Trades Portal home"
-        >
-          <span className="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white shadow-sm">
-            T
-          </span>
-          <span className="text-lg font-semibold tracking-tight">Trades Portal</span>
-        </Link>
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f6f5] px-4 py-8 sm:px-6">
+      <div className="w-full max-w-[420px]">
+        <div className="mb-7 flex justify-center">
+          <Brand href="/" />
+        </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <Card className="overflow-hidden border-t-4 border-t-brand-700 p-5 sm:p-7">
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+            <h1 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-950">
               {title}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+            <p className="mt-1.5 text-sm leading-6 text-zinc-600">{description}</p>
           </div>
           {children}
-        </section>
+        </Card>
+
       </div>
     </main>
   );

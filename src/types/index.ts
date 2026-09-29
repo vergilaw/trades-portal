@@ -8,6 +8,7 @@ export type Json =
   | Json[];
 
 export type QuoteStatus = "draft" | "sent" | "approved" | "rejected";
+export type QuotePhotoPhase = "before" | "after";
 
 /**
  * Keep this in sync with supabase/migrations/20260928000000_initial_schema.sql.
@@ -139,6 +140,45 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: "quote_items_quote_id_fkey";
+            columns: ["quote_id"];
+            isOneToOne: false;
+            referencedRelation: "quotes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quote_photos: {
+        Row: {
+          id: string;
+          quote_id: string;
+          storage_path: string;
+          phase: QuotePhotoPhase;
+          mime_type: "image/jpeg" | "image/png" | "image/webp";
+          size_bytes: number;
+          width: number;
+          height: number;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          quote_id: string;
+          storage_path: string;
+          phase: QuotePhotoPhase;
+          mime_type: "image/jpeg" | "image/png" | "image/webp";
+          size_bytes: number;
+          width: number;
+          height: number;
+          position?: number;
+          created_at?: string;
+        };
+        Update: {
+          phase?: QuotePhotoPhase;
+          position?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quote_photos_quote_id_fkey";
             columns: ["quote_id"];
             isOneToOne: false;
             referencedRelation: "quotes";
