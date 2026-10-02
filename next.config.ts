@@ -14,6 +14,7 @@ const supabaseImagePattern = supabaseUrl
   : null;
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   images: {
     remotePatterns: supabaseImagePattern ? [supabaseImagePattern] : [],
   },

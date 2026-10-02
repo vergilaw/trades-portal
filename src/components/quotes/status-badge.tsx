@@ -1,17 +1,20 @@
 import { Badge } from "@/components/ui/badge";
-import { quoteStatusLabels } from "@/lib/quotes/format";
-import type { QuoteStatus } from "@/types";
+import {
+  quoteStatusLabels,
+  type QuoteDisplayStatus,
+} from "@/lib/quotes/format";
 
 const tones: Record<
-  QuoteStatus,
+  QuoteDisplayStatus,
   "neutral" | "info" | "success" | "danger"
 > = {
   draft: "neutral",
   sent: "info",
   approved: "success",
   rejected: "danger",
+  expired: "neutral",
 };
 
-export function StatusBadge({ status }: { status: QuoteStatus }) {
+export function StatusBadge({ status }: { status: QuoteDisplayStatus }) {
   return <Badge tone={tones[status]}>{quoteStatusLabels[status]}</Badge>;
 }

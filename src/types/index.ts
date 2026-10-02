@@ -197,6 +197,24 @@ export interface Database {
         Args: { p_token: string; p_decision: "approved" | "rejected" };
         Returns: { status: QuoteStatus; responded_at: string }[];
       };
+      update_quote_with_items: {
+        Args: {
+          p_quote_id: string;
+          p_title: string;
+          p_customer_name: string;
+          p_customer_email: string | null;
+          p_customer_phone: string | null;
+          p_notes: string | null;
+          p_tax_rate: number;
+          p_expires_at: string | null;
+          p_items: Json;
+        };
+        Returns: { quote_id: string; quote_token: string }[];
+      };
+      duplicate_quote: {
+        Args: { p_quote_id: string };
+        Returns: { quote_id: string; quote_token: string }[];
+      };
     };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

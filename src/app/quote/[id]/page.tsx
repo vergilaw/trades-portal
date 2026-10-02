@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ArrowSquareOut,
+  PencilSimple,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -8,13 +9,16 @@ import { notFound, redirect } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { CopyLinkButton } from "@/components/quotes/copy-link-button";
+import { DuplicateQuoteButton } from "@/components/quotes/duplicate-quote-button";
 import { PhotoManager } from "@/components/quotes/photo-manager";
 import { StatusBadge } from "@/components/quotes/status-badge";
 import { buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   formatMoney,
+  formatExpiryDate,
   formatQuoteDate,
+  isQuoteExpired,
   shortQuoteId,
 } from "@/lib/quotes/format";
 import { createSignedPhotoViews } from "@/lib/quotes/signed-photos";
@@ -31,12 +35,19 @@ const uuidPattern =
 
 type QuoteDetailsPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    updated?: string;
+    duplicated?: string;
+    duplicate?: string;
+    edit?: string;
+  }>;
 };
 
 export default async function QuoteDetailsPage({
   params,
+  searchParams,
 }: QuoteDetailsPageProps) {
-  const { id } = await params;
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   if (!uuidPattern.test(id)) notFound();
 
   const supabase = await createClient();
@@ -46,7 +57,7 @@ export default async function QuoteDetailsPage({
   const { data: quote, error } = await supabase
     .from("quotes")
     .select(
-      "id, public_token, title, customer_name, customer_email, currency, notes, status, subtotal, tax_rate, tax_amount, total, created_at, quote_items(id, description, quantity, unit_price, position), quote_photos(id, phase, storage_path, width, height, position)",
+      "id, public_token, title, customer_name, customer_email, customer_phone, currency, notes, status, subtotal, tax_rate, tax_amount, total, expires_at, created_at, quote_items(id, description, quantity, unit_price, position), quote_photos(id, phase, storage_path, width, height, position)",
     )
     .eq("id", id)
     .single();
@@ -84,16 +95,32 @@ export default async function QuoteDetailsPage({
               <span className="font-mono text-sm text-zinc-500">
                 {shortQuoteId(quote.id)}
               </span>
-              <StatusBadge status={quote.status} />
+              <StatusBadge
+                status={
+                  quote.status === "sent" && isQuoteExpired(quote.expires_at)
+                    ? "expired"
+                    : quote.status
+                }
+              />
             </div>
             <h1 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-950 sm:text-3xl">
-              {quote.customer_name}
+              {quote.title}
             </h1>
             <p className="mt-1.5 text-sm text-zinc-600">
-              Created {formatQuoteDate(quote.created_at)}
+              For {quote.customer_name} · Created {formatQuoteDate(quote.created_at)}
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-wrap gap-2">
+            {quote.status === "sent" && (
+              <Link
+                href={`/quote/${quote.id}/edit`}
+                className={buttonStyles({ variant: "secondary", size: "sm" })}
+              >
+                <PencilSimple aria-hidden="true" size={17} weight="bold" />
+                Edit
+              </Link>
+            )}
+            <DuplicateQuoteButton quoteId={quote.id} />
             <CopyLinkButton path={`/portal/${quote.public_token}`} />
             <Link
               href={`/portal/${quote.public_token}`}
@@ -105,6 +132,21 @@ export default async function QuoteDetailsPage({
             </Link>
           </div>
         </div>
+
+        {(query.updated === "1" || query.duplicated === "1") && (
+          <div role="status" className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+            {query.duplicated === "1"
+              ? "Quote duplicated. This copy has a new customer portal link."
+              : "Quote changes saved."}
+          </div>
+        )}
+        {(query.duplicate === "error" || query.edit === "locked") && (
+          <div role="alert" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+            {query.edit === "locked"
+              ? "Approved or rejected quotes cannot be edited. Duplicate this quote to make a new version."
+              : "The quote could not be duplicated. Try again."}
+          </div>
+        )}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-5">
@@ -135,11 +177,27 @@ export default async function QuoteDetailsPage({
                 ))}
               </div>
               <div className="border-t border-zinc-200 bg-zinc-50 px-4 py-4 sm:px-6">
-                <div className="ml-auto flex max-w-xs items-end justify-between">
-                  <span className="font-semibold text-zinc-950">Total</span>
-                  <span className="text-xl font-semibold tabular-nums text-zinc-950">
-                    {formatMoney(quote.total, quote.currency)}
-                  </span>
+                <div className="ml-auto max-w-xs space-y-2">
+                  <div className="flex justify-between text-sm text-zinc-600">
+                    <span>Subtotal</span>
+                    <span className="tabular-nums">
+                      {formatMoney(quote.subtotal, quote.currency)}
+                    </span>
+                  </div>
+                  {quote.tax_amount > 0 && (
+                    <div className="flex justify-between text-sm text-zinc-600">
+                      <span>Tax ({quote.tax_rate}%)</span>
+                      <span className="tabular-nums">
+                        {formatMoney(quote.tax_amount, quote.currency)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-end justify-between border-t border-zinc-300 pt-3">
+                    <span className="font-semibold text-zinc-950">Total</span>
+                    <span className="text-xl font-semibold tabular-nums text-zinc-950">
+                      {formatMoney(quote.total, quote.currency)}
+                    </span>
+                  </div>
                 </div>
               </div>
               {quote.notes && (
@@ -176,6 +234,27 @@ export default async function QuoteDetailsPage({
                     <dt className="text-zinc-500">Email</dt>
                     <dd className="mt-0.5 break-all font-medium text-zinc-900">
                       {quote.customer_email}
+                    </dd>
+                  </div>
+                )}
+                {quote.customer_phone && (
+                  <div>
+                    <dt className="text-zinc-500">Phone</dt>
+                    <dd className="mt-0.5 font-medium text-zinc-900">
+                      <a
+                        href={`tel:${quote.customer_phone}`}
+                        className="underline-offset-4 hover:text-brand-800 hover:underline"
+                      >
+                        {quote.customer_phone}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                {quote.expires_at && (
+                  <div>
+                    <dt className="text-zinc-500">Valid until</dt>
+                    <dd className="mt-0.5 font-medium text-zinc-900">
+                      {formatExpiryDate(quote.expires_at)}
                     </dd>
                   </div>
                 )}

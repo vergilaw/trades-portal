@@ -7,7 +7,11 @@ import { ResponseActions } from "@/components/quotes/response-actions";
 import { StatusBadge } from "@/components/quotes/status-badge";
 import { Brand } from "@/components/ui/brand";
 import { Card } from "@/components/ui/card";
-import { formatMoney, shortQuoteId } from "@/lib/quotes/format";
+import {
+  formatExpiryDate,
+  formatMoney,
+  shortQuoteId,
+} from "@/lib/quotes/format";
 import { parsePortalQuote } from "@/lib/quotes/portal";
 import { createSignedPhotoViews } from "@/lib/quotes/signed-photos";
 import { createClient } from "@/lib/supabase/server";
@@ -66,11 +70,16 @@ export default async function PortalPage({ params, searchParams }: PortalPagePro
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-950 sm:text-3xl">
-                  Quote
+                  {quote.title}
                 </h1>
                 <p className="mt-1 font-mono text-sm text-zinc-500">
                   {shortQuoteId(quote.id)}
                 </p>
+                {quote.expiresAt && (
+                  <p className="mt-2 text-sm text-zinc-600">
+                    Valid until {formatExpiryDate(quote.expiresAt)}
+                  </p>
+                )}
               </div>
               <div className="sm:text-right">
                 <p className="text-sm font-medium text-zinc-500">

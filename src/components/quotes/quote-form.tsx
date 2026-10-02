@@ -10,7 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createQuoteAction } from "@/lib/quotes/actions";
+import {
+  createQuoteAction,
+  updateQuoteAction,
+} from "@/lib/quotes/actions";
 import { formatMoney } from "@/lib/quotes/format";
 
 type LineItem = {
@@ -32,19 +35,50 @@ function numericValue(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function CreateQuoteButton() {
+export type QuoteFormInitialValue = {
+  title: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  taxRate: number;
+  expiresAt: string | null;
+  notes: string;
+  items: LineItem[];
+};
+
+function SaveQuoteButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
 
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending ? "Creating quote..." : "Create quote"}
+      {pending
+        ? editing
+          ? "Saving changes..."
+          : "Creating quote..."
+        : editing
+          ? "Save changes"
+          : "Create quote"}
     </Button>
   );
 }
 
-export function QuoteForm() {
-  const [state, formAction] = useActionState(createQuoteAction, {});
-  const [items, setItems] = useState<LineItem[]>([firstItem]);
+export function QuoteForm({
+  quoteId,
+  initialValue,
+}: {
+  quoteId?: string;
+  initialValue?: QuoteFormInitialValue;
+}) {
+  const action = quoteId
+    ? updateQuoteAction.bind(null, quoteId)
+    : createQuoteAction;
+  const [state, formAction] = useActionState(action, {});
+  const [items, setItems] = useState<LineItem[]>(
+    initialValue?.items.length ? initialValue.items : [firstItem],
+  );
+  const [taxRate, setTaxRate] = useState(
+    initialValue ? String(initialValue.taxRate) : "0",
+  );
 
   function updateItem(
     id: string,
@@ -78,6 +112,8 @@ export function QuoteForm() {
       total + numericValue(item.quantity) * numericValue(item.unitPrice),
     0,
   );
+  const taxAmount = (subtotal * numericValue(taxRate)) / 100;
+  const total = subtotal + taxAmount;
 
   return (
     <form action={formAction} noValidate className="space-y-5">
@@ -85,21 +121,40 @@ export function QuoteForm() {
 
       <Card className="border-t-4 border-t-brand-700 p-4 sm:p-6">
         <div className="mb-5">
-          <h2 className="text-base font-semibold text-zinc-950">Customer</h2>
+          <h2 className="text-base font-semibold text-zinc-950">
+            Job and customer
+          </h2>
           <p className="mt-1 text-sm text-zinc-600">
-            Who is this quote for?
+            Name the work clearly so it is easy to find later.
           </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="title">Job title</Label>
+            <Input
+              id="title"
+              name="title"
+              defaultValue={initialValue?.title}
+              required
+              autoFocus
+              maxLength={140}
+              aria-invalid={Boolean(state.fieldErrors?.title)}
+              aria-describedby={state.fieldErrors?.title ? "title-error" : undefined}
+              className="mt-1.5"
+              placeholder="Replace switchboard and safety test"
+            />
+            <FieldError id="title-error" message={state.fieldErrors?.title} />
+          </div>
+
+          <div className="sm:col-span-2">
             <Label htmlFor="customerName">Customer name</Label>
             <Input
               id="customerName"
               name="customerName"
+              defaultValue={initialValue?.customerName}
               autoComplete="name"
               required
-              autoFocus
               maxLength={120}
               aria-invalid={Boolean(state.fieldErrors?.customerName)}
               aria-describedby={
@@ -123,6 +178,7 @@ export function QuoteForm() {
               id="customerEmail"
               name="customerEmail"
               type="email"
+              defaultValue={initialValue?.customerEmail}
               autoComplete="email"
               aria-invalid={Boolean(state.fieldErrors?.customerEmail)}
               aria-describedby={
@@ -134,6 +190,34 @@ export function QuoteForm() {
             <FieldError
               id="customer-email-error"
               message={state.fieldErrors?.customerEmail}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="customerPhone">
+              Customer phone{" "}
+              <span className="font-normal text-zinc-500">(optional)</span>
+            </Label>
+            <Input
+              id="customerPhone"
+              name="customerPhone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              defaultValue={initialValue?.customerPhone}
+              maxLength={30}
+              aria-invalid={Boolean(state.fieldErrors?.customerPhone)}
+              aria-describedby={
+                state.fieldErrors?.customerPhone
+                  ? "customer-phone-error"
+                  : undefined
+              }
+              className="mt-1.5"
+              placeholder="090 123 4567"
+            />
+            <FieldError
+              id="customer-phone-error"
+              message={state.fieldErrors?.customerPhone}
             />
           </div>
         </div>
@@ -267,14 +351,75 @@ export function QuoteForm() {
         )}
 
         <div className="border-t border-zinc-200 bg-zinc-50 px-4 py-4 sm:px-6">
-          <div className="ml-auto max-w-xs space-y-2">
-            <div className="flex items-center justify-between text-sm text-zinc-600">
-              <span>Subtotal</span>
-              <span className="tabular-nums">{formatMoney(subtotal)}</span>
+          <div className="ml-auto max-w-xl space-y-3">
+            <div className="grid gap-4 sm:grid-cols-[112px_180px_minmax(160px,1fr)] sm:items-end">
+              <div>
+                <Label htmlFor="taxRate">Tax rate</Label>
+                <div className="relative mt-1.5 w-28">
+                  <Input
+                    id="taxRate"
+                    name="taxRate"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={taxRate}
+                    onChange={(event) => setTaxRate(event.target.value)}
+                    aria-invalid={Boolean(state.fieldErrors?.taxRate)}
+                    aria-describedby={
+                      state.fieldErrors?.taxRate ? "tax-rate-error" : undefined
+                    }
+                    className="pr-8"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">
+                    %
+                  </span>
+                </div>
+                <FieldError
+                  id="tax-rate-error"
+                  message={state.fieldErrors?.taxRate}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="expiresAt">
+                  Valid until{" "}
+                  <span className="font-normal text-zinc-500">(optional)</span>
+                </Label>
+                <Input
+                  id="expiresAt"
+                  name="expiresAt"
+                  type="date"
+                  defaultValue={initialValue?.expiresAt?.slice(0, 10)}
+                  aria-invalid={Boolean(state.fieldErrors?.expiresAt)}
+                  aria-describedby={
+                    state.fieldErrors?.expiresAt ? "expiry-error" : undefined
+                  }
+                  className="mt-1.5"
+                />
+                <FieldError
+                  id="expiry-error"
+                  message={state.fieldErrors?.expiresAt}
+                />
+              </div>
+
+              <div className="space-y-2 sm:pb-2.5">
+                <div className="flex items-center justify-between gap-6 text-sm text-zinc-600">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums">{formatMoney(subtotal)}</span>
+                </div>
+                {numericValue(taxRate) > 0 && (
+                  <div className="flex items-center justify-between gap-6 text-sm text-zinc-600">
+                    <span>Tax</span>
+                    <span className="tabular-nums">{formatMoney(taxAmount)}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between border-t border-zinc-200 pt-2 text-base font-semibold text-zinc-950">
               <span>Total</span>
-              <span className="tabular-nums">{formatMoney(subtotal)}</span>
+              <span className="tabular-nums">{formatMoney(total)}</span>
             </div>
           </div>
         </div>
@@ -287,6 +432,7 @@ export function QuoteForm() {
         <Textarea
           id="notes"
           name="notes"
+          defaultValue={initialValue?.notes}
           maxLength={2_000}
           aria-invalid={Boolean(state.fieldErrors?.notes)}
           aria-describedby={state.fieldErrors?.notes ? "notes-error" : undefined}
@@ -297,7 +443,7 @@ export function QuoteForm() {
       </Card>
 
       <div className="sticky bottom-0 z-10 -mx-4 border-t border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:flex sm:justify-end sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-        <CreateQuoteButton />
+        <SaveQuoteButton editing={Boolean(quoteId)} />
       </div>
     </form>
   );

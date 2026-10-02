@@ -1,7 +1,8 @@
-import { SignOut } from "@phosphor-icons/react/dist/ssr";
+import { GearSix, SignOut } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 
 import { Brand } from "@/components/ui/brand";
-import { Button } from "@/components/ui/button";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { logoutAction } from "@/lib/auth/actions";
 
 export function AppHeader({ email }: { email?: string }) {
@@ -21,6 +22,14 @@ export function AppHeader({ email }: { email?: string }) {
               <span className="max-w-48 truncate text-sm text-zinc-600">{email}</span>
             )}
           </div>
+          <Link
+            href="/settings"
+            className={buttonStyles({ variant: "ghost", size: "sm" })}
+          >
+            <GearSix aria-hidden="true" size={17} weight="bold" />
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sr-only sm:hidden">Settings</span>
+          </Link>
           <form action={logoutAction}>
             <Button type="submit" variant="ghost" size="sm">
               <SignOut aria-hidden="true" size={17} weight="bold" />

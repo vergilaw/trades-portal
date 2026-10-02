@@ -9,10 +9,13 @@ The project intentionally stays small: one tradesperson can sign up, create a qu
 - Tradesperson email/password signup and login
 - Protected dashboard
 - Create a quote with line items
+- Add a job title and tax rate to each quote
 - Generate a public customer portal link
 - Customer quote review and Approve / Reject actions
 - Upload, classify, and remove Before / After job photos
 - Show job photos in the protected quote view and customer portal
+- Manage the business identity and contact number shown to customers
+- Search the quote register and load a realistic local demo workspace
 
 Not included in this MVP:
 
@@ -34,10 +37,11 @@ The complete MVP flow is implemented.
 - `/quote/new` creates quotes with multiple line items and a public portal token
 - `/quote/[id]` shows quote details and manages Before / After photos
 - `/portal/[token]` lets customers review and approve or reject a quote
+- `/settings` manages the business profile shown on customer portals
 
 ## Tech stack
 
-- Next.js 15 with App Router
+- Next.js 16 with App Router
 - React 19
 - TypeScript
 - Tailwind CSS 4
@@ -80,6 +84,15 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
+Demo data import is available automatically in development. To expose the
+guarded importer in another non-production environment, add:
+
+```env
+ENABLE_DEMO_DATA_IMPORT=true
+```
+
+Keep this unset in production unless demo imports are explicitly required.
+
 Only use the Supabase publishable key in browser-accessible environment variables. Do not expose a `service_role` or secret key.
 
 ## Database setup
@@ -89,6 +102,7 @@ Database migrations are located at:
 ```text
 supabase/migrations/20260928000000_initial_schema.sql
 supabase/migrations/20260928010000_quote_photos.sql
+supabase/migrations/20260930000000_quote_mutations.sql
 ```
 
 It creates:
@@ -102,9 +116,13 @@ It creates:
 - User profile and timestamp triggers
 - Secure RPC functions for viewing and responding to public quotes by token
 
-Run both migrations in filename order through the Supabase SQL Editor or your
+Run all migrations in filename order through the Supabase SQL Editor or your
 usual Supabase CLI workflow. The photo migration creates the private bucket,
 its RLS policies, and the portal photo metadata response.
+
+The quote mutation migration adds authenticated, transaction-safe RPCs for
+editing and duplicating quotes. Apply it before using those actions. Duplicate
+quotes receive a new customer portal link and copy line items, but not photos.
 
 Photo uploads accept JPG, JPEG, PNG, and WebP input. The browser resizes the
 longest edge to at most 1920px, converts the result to WebP, and compresses it
@@ -148,25 +166,29 @@ Useful routes:
 | `/signup` | Create a tradesperson account | Signed-out users |
 | `/login` | Sign in | Signed-out users |
 | `/dashboard` | MVP dashboard | Authenticated users |
+| `/settings` | Manage business identity and contact details | Authenticated users |
 | `/auth/callback` | PKCE email confirmation callback | Supabase Auth |
 | `/auth/confirm` | Token-hash email confirmation | Supabase Auth |
 | `/quote/new` | Create a quote and line items | Authenticated users |
 | `/quote/[id]` | View a quote and manage Before / After photos | Quote owner |
+| `/quote/[id]/edit` | Edit a pending quote and its line items | Quote owner |
 | `/portal/[token]` | View and respond to a quote | Anyone with the secure token |
 
 ## Available scripts
 
 ```bash
-npm run dev      # Start the development server with Turbopack
+npm run dev      # Start the development server
 npm run build    # Create a production build
 npm run start    # Start the production server
 npm run lint     # Run ESLint
+npm test         # Run quote calculation and validation tests
 ```
 
 Before committing changes, run:
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```
 
@@ -192,7 +214,7 @@ src/
 │       ├── client.ts
 │       ├── middleware.ts
 │       └── server.ts
-├── middleware.ts
+├── proxy.ts
 └── types/index.ts
 
 supabase/
@@ -222,6 +244,9 @@ supabase/
 9. Confirm files over the limits or unsupported formats show a clear error.
 10. Open the portal link in a private window and confirm the gallery is visible.
 11. Delete a photo as the quote owner and confirm it disappears from the portal.
+12. Edit a pending quote and confirm the customer portal updates immediately.
+13. Duplicate a quote and confirm it has a different portal link and no photos.
+14. Set an expiry date and confirm expired quotes are marked on the dashboard.
 
 ## Deployment notes
 
@@ -234,9 +259,10 @@ supabase/
 ## GitHub CI/CD
 
 The workflow at `.github/workflows/ci-cd.yml` runs lint and a production build
-for pull requests targeting `main` and for pushes to `main`. A successful push
-to `main` is then deployed to Vercel production. It can also be started manually
-from the GitHub Actions page.
+for pull requests targeting `main` and for pushes to `main`. Production deploys
+are intentionally manual: start the workflow from the GitHub Actions page when
+the release is ready. The deploy job runs only for that manual trigger and only
+after verification passes.
 
 Create a GitHub environment named `production` and add these environment
 secrets:
