@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/components/i18n/provider";
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -22,16 +23,20 @@ type ProfileFormProps = {
 };
 
 function SaveProfileButton() {
+  const { t } = useI18n();
+
   const { pending } = useFormStatus();
 
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? "Saving..." : "Save profile"}
+      {pending ? t("Saving...") : t("Save profile")}
     </Button>
   );
 }
 
 export function ProfileForm({ email, profile }: ProfileFormProps) {
+  const { t } = useI18n();
+
   const initialState: ProfileActionState = {};
   const [state, formAction] = useActionState(updateProfileAction, initialState);
 
@@ -42,7 +47,9 @@ export function ProfileForm({ email, profile }: ProfileFormProps) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <Label htmlFor="businessName">Business or tradesperson name</Label>
+          <Label htmlFor="businessName">
+            {t("Business or tradesperson name")}
+          </Label>
           <Input
             id="businessName"
             name="businessName"
@@ -52,7 +59,9 @@ export function ProfileForm({ email, profile }: ProfileFormProps) {
             autoFocus
             aria-invalid={Boolean(state.fieldErrors?.businessName)}
             aria-describedby={
-              state.fieldErrors?.businessName ? "business-name-error" : undefined
+              state.fieldErrors?.businessName
+                ? "business-name-error"
+                : undefined
             }
             className="mt-1.5"
           />
@@ -64,7 +73,8 @@ export function ProfileForm({ email, profile }: ProfileFormProps) {
 
         <div>
           <Label htmlFor="fullName">
-            Contact name <span className="font-normal text-zinc-500">(optional)</span>
+            {t("Contact name")}{" "}
+            <span className="font-normal text-zinc-500">{t("(optional)")}</span>
           </Label>
           <Input
             id="fullName"
@@ -78,13 +88,16 @@ export function ProfileForm({ email, profile }: ProfileFormProps) {
             }
             className="mt-1.5"
           />
-          <FieldError id="full-name-error" message={state.fieldErrors?.fullName} />
+          <FieldError
+            id="full-name-error"
+            message={state.fieldErrors?.fullName}
+          />
         </div>
 
         <div>
           <Label htmlFor="phone">
-            Customer contact number{" "}
-            <span className="font-normal text-zinc-500">(optional)</span>
+            {t("Customer contact number")}{" "}
+            <span className="font-normal text-zinc-500">{t("(optional)")}</span>
           </Label>
           <Input
             id="phone"
@@ -95,18 +108,22 @@ export function ProfileForm({ email, profile }: ProfileFormProps) {
             defaultValue={profile.phone}
             maxLength={30}
             aria-invalid={Boolean(state.fieldErrors?.phone)}
-            aria-describedby={state.fieldErrors?.phone ? "phone-error" : "phone-help"}
+            aria-describedby={
+              state.fieldErrors?.phone ? "phone-error" : "phone-help"
+            }
             className="mt-1.5"
             placeholder="+84 90 123 4567"
           />
           <p id="phone-help" className="mt-1.5 text-xs leading-5 text-zinc-500">
-            Shown on customer quote portals so customers can contact you.
+            {t(
+              "Shown on customer quote portals so customers can contact you.",
+            )}{" "}
           </p>
           <FieldError id="phone-error" message={state.fieldErrors?.phone} />
         </div>
 
         <div>
-          <Label htmlFor="accountEmail">Account email</Label>
+          <Label htmlFor="accountEmail">{t("Account email")}</Label>
           <Input
             id="accountEmail"
             value={email ?? ""}
@@ -115,7 +132,7 @@ export function ProfileForm({ email, profile }: ProfileFormProps) {
             className="mt-1.5"
           />
           <p className="mt-1.5 text-xs leading-5 text-zinc-500">
-            Used to sign in. Email changes are not available yet.
+            {t("Used to sign in. Email changes are not available yet.")}{" "}
           </p>
         </div>
       </div>

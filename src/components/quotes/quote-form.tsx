@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/components/i18n/provider";
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -10,10 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  createQuoteAction,
-  updateQuoteAction,
-} from "@/lib/quotes/actions";
+import { createQuoteAction, updateQuoteAction } from "@/lib/quotes/actions";
 import { formatMoney } from "@/lib/quotes/format";
 
 type LineItem = {
@@ -47,17 +45,19 @@ export type QuoteFormInitialValue = {
 };
 
 function SaveQuoteButton({ editing }: { editing: boolean }) {
+  const { t } = useI18n();
+
   const { pending } = useFormStatus();
 
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
       {pending
         ? editing
-          ? "Saving changes..."
-          : "Creating quote..."
+          ? t("Saving changes...")
+          : t("Creating quote...")
         : editing
-          ? "Save changes"
-          : "Create quote"}
+          ? t("Save changes")
+          : t("Create quote")}
     </Button>
   );
 }
@@ -69,10 +69,23 @@ export function QuoteForm({
   quoteId?: string;
   initialValue?: QuoteFormInitialValue;
 }) {
+  const { t, locale } = useI18n();
+
   const action = quoteId
     ? updateQuoteAction.bind(null, quoteId)
     : createQuoteAction;
   const [state, formAction] = useActionState(action, {});
+  const [fields, setFields] = useState({
+    title: initialValue?.title ?? "",
+    customerName: initialValue?.customerName ?? "",
+    customerEmail: initialValue?.customerEmail ?? "",
+    customerPhone: initialValue?.customerPhone ?? "",
+    expiresAt: initialValue?.expiresAt?.slice(0, 10) ?? "",
+    notes: initialValue?.notes ?? "",
+  });
+  function updateField(field: keyof typeof fields, value: string) {
+    setFields((current) => ({ ...current, [field]: value }));
+  }
   const [items, setItems] = useState<LineItem[]>(
     initialValue?.items.length ? initialValue.items : [firstItem],
   );
@@ -86,7 +99,9 @@ export function QuoteForm({
     value: string,
   ) {
     setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      current.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
     );
   }
 
@@ -122,46 +137,54 @@ export function QuoteForm({
       <Card className="border-t-4 border-t-brand-700 p-4 sm:p-6">
         <div className="mb-5">
           <h2 className="text-base font-semibold text-zinc-950">
-            Job and customer
+            {t("Job and customer")}{" "}
           </h2>
           <p className="mt-1 text-sm text-zinc-600">
-            Name the work clearly so it is easy to find later.
+            {t("Name the work clearly so it is easy to find later.")}{" "}
           </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label htmlFor="title">Job title</Label>
+            <Label htmlFor="title">{t("Job title")}</Label>
             <Input
               id="title"
               name="title"
-              defaultValue={initialValue?.title}
+              value={fields.title}
+              onChange={(event) => updateField("title", event.target.value)}
               required
               autoFocus
               maxLength={140}
               aria-invalid={Boolean(state.fieldErrors?.title)}
-              aria-describedby={state.fieldErrors?.title ? "title-error" : undefined}
+              aria-describedby={
+                state.fieldErrors?.title ? "title-error" : undefined
+              }
               className="mt-1.5"
-              placeholder="Replace switchboard and safety test"
+              placeholder={t("Replace switchboard and safety test")}
             />
             <FieldError id="title-error" message={state.fieldErrors?.title} />
           </div>
 
           <div className="sm:col-span-2">
-            <Label htmlFor="customerName">Customer name</Label>
+            <Label htmlFor="customerName">{t("Customer name")}</Label>
             <Input
               id="customerName"
               name="customerName"
-              defaultValue={initialValue?.customerName}
+              value={fields.customerName}
+              onChange={(event) =>
+                updateField("customerName", event.target.value)
+              }
               autoComplete="name"
               required
               maxLength={120}
               aria-invalid={Boolean(state.fieldErrors?.customerName)}
               aria-describedby={
-                state.fieldErrors?.customerName ? "customer-name-error" : undefined
+                state.fieldErrors?.customerName
+                  ? "customer-name-error"
+                  : undefined
               }
               className="mt-1.5"
-              placeholder="Alex Johnson"
+              placeholder={t("Alex Johnson")}
             />
             <FieldError
               id="customer-name-error"
@@ -171,21 +194,28 @@ export function QuoteForm({
 
           <div>
             <Label htmlFor="customerEmail">
-              Customer email{" "}
-              <span className="font-normal text-zinc-500">(optional)</span>
+              {t("Customer email")}{" "}
+              <span className="font-normal text-zinc-500">
+                {t("(optional)")}
+              </span>
             </Label>
             <Input
               id="customerEmail"
               name="customerEmail"
               type="email"
-              defaultValue={initialValue?.customerEmail}
+              value={fields.customerEmail}
+              onChange={(event) =>
+                updateField("customerEmail", event.target.value)
+              }
               autoComplete="email"
               aria-invalid={Boolean(state.fieldErrors?.customerEmail)}
               aria-describedby={
-                state.fieldErrors?.customerEmail ? "customer-email-error" : undefined
+                state.fieldErrors?.customerEmail
+                  ? "customer-email-error"
+                  : undefined
               }
               className="mt-1.5"
-              placeholder="alex@example.com"
+              placeholder={t("alex@example.com")}
             />
             <FieldError
               id="customer-email-error"
@@ -195,8 +225,10 @@ export function QuoteForm({
 
           <div>
             <Label htmlFor="customerPhone">
-              Customer phone{" "}
-              <span className="font-normal text-zinc-500">(optional)</span>
+              {t("Customer phone")}{" "}
+              <span className="font-normal text-zinc-500">
+                {t("(optional)")}
+              </span>
             </Label>
             <Input
               id="customerPhone"
@@ -204,7 +236,10 @@ export function QuoteForm({
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              defaultValue={initialValue?.customerPhone}
+              value={fields.customerPhone}
+              onChange={(event) =>
+                updateField("customerPhone", event.target.value)
+              }
               maxLength={30}
               aria-invalid={Boolean(state.fieldErrors?.customerPhone)}
               aria-describedby={
@@ -226,8 +261,12 @@ export function QuoteForm({
       <Card className="overflow-hidden">
         <div className="flex items-start justify-between gap-4 border-b border-zinc-200 p-4 sm:p-6">
           <div>
-            <h2 className="text-base font-semibold text-zinc-950">Quote items</h2>
-            <p className="mt-1 text-sm text-zinc-600">Add labour and materials.</p>
+            <h2 className="text-base font-semibold text-zinc-950">
+              {t("Quote items")}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              {t("Add labour and materials.")}
+            </p>
           </div>
           <Button
             type="button"
@@ -237,7 +276,7 @@ export function QuoteForm({
             disabled={items.length >= 20}
           >
             <Plus aria-hidden="true" weight="bold" />
-            Add item
+            {t("Add item")}{" "}
           </Button>
         </div>
 
@@ -248,10 +287,12 @@ export function QuoteForm({
 
             return (
               <fieldset key={item.id} className="p-4 sm:p-6">
-                <legend className="sr-only">Quote item {index + 1}</legend>
+                <legend className="sr-only">
+                  {t("Quote item")} {index + 1}
+                </legend>
                 <div className="mb-3 flex items-center justify-between sm:hidden">
                   <span className="text-sm font-medium text-zinc-500">
-                    Item {index + 1}
+                    {t("Item")} {index + 1}
                   </span>
                   {items.length > 1 && (
                     <button
@@ -259,14 +300,16 @@ export function QuoteForm({
                       onClick={() => removeItem(item.id)}
                       className="min-h-11 px-2 text-sm font-medium text-zinc-500 underline-offset-4 hover:text-red-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
                     >
-                      Remove
+                      {t("Remove")}{" "}
                     </button>
                   )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-12 sm:items-end">
                   <div className="sm:col-span-5">
-                    <Label htmlFor={`${item.id}-description`}>Description</Label>
+                    <Label htmlFor={`${item.id}-description`}>
+                      {t("Description")}
+                    </Label>
                     <Input
                       id={`${item.id}-description`}
                       name="itemDescription"
@@ -277,13 +320,13 @@ export function QuoteForm({
                       required
                       maxLength={240}
                       className="mt-1.5"
-                      placeholder="Call-out and repair"
+                      placeholder={t("Call-out and repair")}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 sm:contents">
                     <div className="sm:col-span-2">
-                      <Label htmlFor={`${item.id}-quantity`}>Qty</Label>
+                      <Label htmlFor={`${item.id}-quantity`}>{t("Qty")}</Label>
                       <Input
                         id={`${item.id}-quantity`}
                         name="itemQuantity"
@@ -301,7 +344,9 @@ export function QuoteForm({
                     </div>
 
                     <div className="sm:col-span-3">
-                      <Label htmlFor={`${item.id}-price`}>Unit price</Label>
+                      <Label htmlFor={`${item.id}-price`}>
+                        {t("Unit price")}
+                      </Label>
                       <Input
                         id={`${item.id}-price`}
                         name="itemUnitPrice"
@@ -321,9 +366,11 @@ export function QuoteForm({
                   </div>
 
                   <div className="flex min-h-11 items-center justify-between rounded-lg bg-zinc-50 px-3 sm:col-span-2 sm:block sm:bg-transparent sm:px-0 sm:pb-2.5 sm:text-right">
-                    <span className="text-sm text-zinc-500 sm:sr-only">Line total</span>
+                    <span className="text-sm text-zinc-500 sm:sr-only">
+                      {t("Line total")}
+                    </span>
                     <span className="text-sm font-semibold tabular-nums text-zinc-950">
-                      {formatMoney(lineTotal)}
+                      {formatMoney(lineTotal, "VND", locale)}
                     </span>
                   </div>
 
@@ -332,9 +379,9 @@ export function QuoteForm({
                       <button
                         type="button"
                         onClick={() => removeItem(item.id)}
-                        className="text-sm font-medium text-zinc-500 underline-offset-4 hover:text-red-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+                        className="min-h-11 px-2 text-sm font-medium text-zinc-500 underline-offset-4 hover:text-red-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
                       >
-                        Remove item
+                        {t("Remove item")}{" "}
                       </button>
                     )}
                   </div>
@@ -354,7 +401,7 @@ export function QuoteForm({
           <div className="ml-auto max-w-xl space-y-3">
             <div className="grid gap-4 sm:grid-cols-[112px_180px_minmax(160px,1fr)] sm:items-end">
               <div>
-                <Label htmlFor="taxRate">Tax rate</Label>
+                <Label htmlFor="taxRate">{t("Tax rate")}</Label>
                 <div className="relative mt-1.5 w-28">
                   <Input
                     id="taxRate"
@@ -384,14 +431,19 @@ export function QuoteForm({
 
               <div>
                 <Label htmlFor="expiresAt">
-                  Valid until{" "}
-                  <span className="font-normal text-zinc-500">(optional)</span>
+                  {t("Valid until")}{" "}
+                  <span className="font-normal text-zinc-500">
+                    {t("(optional)")}
+                  </span>
                 </Label>
                 <Input
                   id="expiresAt"
                   name="expiresAt"
                   type="date"
-                  defaultValue={initialValue?.expiresAt?.slice(0, 10)}
+                  value={fields.expiresAt}
+                  onChange={(event) =>
+                    updateField("expiresAt", event.target.value)
+                  }
                   aria-invalid={Boolean(state.fieldErrors?.expiresAt)}
                   aria-describedby={
                     state.fieldErrors?.expiresAt ? "expiry-error" : undefined
@@ -406,20 +458,26 @@ export function QuoteForm({
 
               <div className="space-y-2 sm:pb-2.5">
                 <div className="flex items-center justify-between gap-6 text-sm text-zinc-600">
-                  <span>Subtotal</span>
-                  <span className="tabular-nums">{formatMoney(subtotal)}</span>
+                  <span>{t("Subtotal")}</span>
+                  <span className="tabular-nums">
+                    {formatMoney(subtotal, "VND", locale)}
+                  </span>
                 </div>
                 {numericValue(taxRate) > 0 && (
                   <div className="flex items-center justify-between gap-6 text-sm text-zinc-600">
-                    <span>Tax</span>
-                    <span className="tabular-nums">{formatMoney(taxAmount)}</span>
+                    <span>{t("Tax")}</span>
+                    <span className="tabular-nums">
+                      {formatMoney(taxAmount, "VND", locale)}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
             <div className="flex items-center justify-between border-t border-zinc-200 pt-2 text-base font-semibold text-zinc-950">
-              <span>Total</span>
-              <span className="tabular-nums">{formatMoney(total)}</span>
+              <span>{t("Total")}</span>
+              <span className="tabular-nums">
+                {formatMoney(total, "VND", locale)}
+              </span>
             </div>
           </div>
         </div>
@@ -427,17 +485,23 @@ export function QuoteForm({
 
       <Card className="p-4 sm:p-6">
         <Label htmlFor="notes">
-          Notes <span className="font-normal text-zinc-500">(optional)</span>
+          {t("Notes")}{" "}
+          <span className="font-normal text-zinc-500">{t("(optional)")}</span>
         </Label>
         <Textarea
           id="notes"
           name="notes"
-          defaultValue={initialValue?.notes}
+          value={fields.notes}
+          onChange={(event) => updateField("notes", event.target.value)}
           maxLength={2_000}
           aria-invalid={Boolean(state.fieldErrors?.notes)}
-          aria-describedby={state.fieldErrors?.notes ? "notes-error" : undefined}
+          aria-describedby={
+            state.fieldErrors?.notes ? "notes-error" : undefined
+          }
           className="mt-1.5"
-          placeholder="Scope, exclusions, or anything the customer should know."
+          placeholder={t(
+            "Scope, exclusions, or anything the customer should know.",
+          )}
         />
         <FieldError id="notes-error" message={state.fieldErrors?.notes} />
       </Card>

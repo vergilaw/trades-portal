@@ -57,9 +57,14 @@ function listValues(formData: FormData, name: string) {
     .map((value) => (typeof value === "string" ? value.trim() : ""));
 }
 
-function parseQuoteForm(formData: FormData):
+function parseQuoteForm(
+  formData: FormData,
+):
   | { values: ValidQuoteInput; fieldErrors?: never }
-  | { values?: never; fieldErrors: NonNullable<QuoteActionState["fieldErrors"]> } {
+  | {
+      values?: never;
+      fieldErrors: NonNullable<QuoteActionState["fieldErrors"]>;
+    } {
   const title = stringValue(formData, "title");
   const customerName = stringValue(formData, "customerName");
   const customerEmail = stringValue(formData, "customerEmail").toLowerCase();
@@ -224,7 +229,10 @@ export async function updateQuoteAction(
   redirect(`/quote/${quoteId}?updated=1`);
 }
 
-export async function duplicateQuoteAction(quoteId: string, _formData: FormData) {
+export async function duplicateQuoteAction(
+  quoteId: string,
+  _formData: FormData,
+) {
   void _formData;
 
   if (!uuidPattern.test(quoteId)) redirect("/dashboard");

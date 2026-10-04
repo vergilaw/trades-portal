@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 export type DemoImportState = {
   error?: string;
   message?: string;
+  count?: number;
 };
 
 export async function importDemoDataAction(
@@ -103,11 +104,14 @@ export async function importDemoDataAction(
 
   if (itemError) {
     await supabase.from("quotes").delete().in("id", insertedIds);
-    return { error: "Demo line items could not be created. No demo data was kept." };
+    return {
+      error: "Demo line items could not be created. No demo data was kept.",
+    };
   }
 
   revalidatePath("/dashboard");
   return {
-    message: `${newQuotes.length} realistic demo quotes added to your workspace.`,
+    message: "{count} realistic demo quotes added to your workspace.",
+    count: newQuotes.length,
   };
 }

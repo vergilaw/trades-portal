@@ -51,20 +51,16 @@ test("parses an expiry date through the end of the selected UTC day", () => {
 
 test("rejects past expiry dates", () => {
   assert.match(
-    parseExpiryDate(
-      "2026-09-29",
-      new Date("2026-09-30T00:00:00.000Z"),
-    ).error ?? "",
+    parseExpiryDate("2026-09-29", new Date("2026-09-30T00:00:00.000Z")).error ??
+      "",
     /future/,
   );
 });
 
 test("rejects calendar dates that do not exist", () => {
   assert.match(
-    parseExpiryDate(
-      "2026-02-31",
-      new Date("2026-01-01T00:00:00.000Z"),
-    ).error ?? "",
+    parseExpiryDate("2026-02-31", new Date("2026-01-01T00:00:00.000Z")).error ??
+      "",
     /valid expiry date/,
   );
 });

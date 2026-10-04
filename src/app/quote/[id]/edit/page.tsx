@@ -1,3 +1,5 @@
+import { getLocale } from "@/lib/i18n/server";
+import { createTranslator, translate } from "@/lib/i18n/shared";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -9,9 +11,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Edit quote",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: translate("Edit quote", await getLocale()) };
+}
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -21,6 +23,9 @@ export default async function EditQuotePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+
   const { id } = await params;
   if (!uuidPattern.test(id)) notFound();
 
@@ -56,15 +61,15 @@ export default async function EditQuotePage({
           className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
         >
           <ArrowLeft aria-hidden="true" weight="bold" />
-          Back to quote
+          {t("Back to quote")}{" "}
         </Link>
 
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-950 sm:text-3xl">
-            Edit quote
+            {t("Edit quote")}{" "}
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-zinc-600">
-            Changes appear immediately on the customer portal.
+            {t("Changes appear immediately on the customer portal.")}{" "}
           </p>
         </div>
 

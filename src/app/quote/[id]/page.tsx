@@ -1,3 +1,5 @@
+import { getLocale } from "@/lib/i18n/server";
+import { createTranslator, translate } from "@/lib/i18n/shared";
 import {
   ArrowLeft,
   ArrowSquareOut,
@@ -8,6 +10,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { OwnerPayment } from "@/components/payments/owner-payment";
 import { CopyLinkButton } from "@/components/quotes/copy-link-button";
 import { DuplicateQuoteButton } from "@/components/quotes/duplicate-quote-button";
 import { PhotoManager } from "@/components/quotes/photo-manager";
@@ -26,9 +29,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Quote details",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: translate("Quote details", await getLocale()) };
+}
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -47,6 +50,9 @@ export default async function QuoteDetailsPage({
   params,
   searchParams,
 }: QuoteDetailsPageProps) {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+
   const [{ id }, query] = await Promise.all([params, searchParams]);
   if (!uuidPattern.test(id)) notFound();
 
@@ -86,7 +92,7 @@ export default async function QuoteDetailsPage({
           className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
         >
           <ArrowLeft aria-hidden="true" weight="bold" />
-          Back to quotes
+          {t("Back to quotes")}{" "}
         </Link>
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -107,7 +113,8 @@ export default async function QuoteDetailsPage({
               {quote.title}
             </h1>
             <p className="mt-1.5 text-sm text-zinc-600">
-              For {quote.customer_name} · Created {formatQuoteDate(quote.created_at)}
+              {t("For")} {quote.customer_name} {t("· Created")}{" "}
+              {formatQuoteDate(quote.created_at, locale)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -117,7 +124,7 @@ export default async function QuoteDetailsPage({
                 className={buttonStyles({ variant: "secondary", size: "sm" })}
               >
                 <PencilSimple aria-hidden="true" size={17} weight="bold" />
-                Edit
+                {t("Edit")}{" "}
               </Link>
             )}
             <DuplicateQuoteButton quoteId={quote.id} />
@@ -128,23 +135,31 @@ export default async function QuoteDetailsPage({
               className={buttonStyles({ variant: "secondary", size: "sm" })}
             >
               <ArrowSquareOut aria-hidden="true" size={17} weight="bold" />
-              View portal
+              {t("View portal")}{" "}
             </Link>
           </div>
         </div>
 
         {(query.updated === "1" || query.duplicated === "1") && (
-          <div role="status" className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          <div
+            role="status"
+            className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+          >
             {query.duplicated === "1"
-              ? "Quote duplicated. This copy has a new customer portal link."
-              : "Quote changes saved."}
+              ? t("Quote duplicated. This copy has a new customer portal link.")
+              : t("Quote changes saved.")}
           </div>
         )}
         {(query.duplicate === "error" || query.edit === "locked") && (
-          <div role="alert" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+          <div
+            role="alert"
+            className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+          >
             {query.edit === "locked"
-              ? "Approved or rejected quotes cannot be edited. Duplicate this quote to make a new version."
-              : "The quote could not be duplicated. Try again."}
+              ? t(
+                  "Approved or rejected quotes cannot be edited. Duplicate this quote to make a new version.",
+                )
+              : t("The quote could not be duplicated. Try again.")}
           </div>
         )}
 
@@ -152,7 +167,9 @@ export default async function QuoteDetailsPage({
           <div className="space-y-5">
             <Card className="overflow-hidden border-t-4 border-t-brand-700">
               <div className="border-b border-zinc-200 px-4 py-4 sm:px-6">
-                <h2 className="font-semibold text-zinc-950">Quote details</h2>
+                <h2 className="font-semibold text-zinc-950">
+                  {t("Quote details")}
+                </h2>
               </div>
               <div className="divide-y divide-zinc-200">
                 {items.map((item) => (
@@ -165,12 +182,13 @@ export default async function QuoteDetailsPage({
                     </p>
                     <p className="text-sm text-zinc-500 sm:text-right">
                       {item.quantity} ×{" "}
-                      {formatMoney(item.unit_price, quote.currency)}
+                      {formatMoney(item.unit_price, quote.currency, locale)}
                     </p>
                     <p className="text-sm font-semibold tabular-nums text-zinc-950 sm:text-right">
                       {formatMoney(
                         item.quantity * item.unit_price,
                         quote.currency,
+                        locale,
                       )}
                     </p>
                   </div>
@@ -179,36 +197,50 @@ export default async function QuoteDetailsPage({
               <div className="border-t border-zinc-200 bg-zinc-50 px-4 py-4 sm:px-6">
                 <div className="ml-auto max-w-xs space-y-2">
                   <div className="flex justify-between text-sm text-zinc-600">
-                    <span>Subtotal</span>
+                    <span>{t("Subtotal")}</span>
                     <span className="tabular-nums">
-                      {formatMoney(quote.subtotal, quote.currency)}
+                      {formatMoney(quote.subtotal, quote.currency, locale)}
                     </span>
                   </div>
                   {quote.tax_amount > 0 && (
                     <div className="flex justify-between text-sm text-zinc-600">
-                      <span>Tax ({quote.tax_rate}%)</span>
+                      <span>
+                        {t("Tax (")}
+                        {quote.tax_rate}%)
+                      </span>
                       <span className="tabular-nums">
-                        {formatMoney(quote.tax_amount, quote.currency)}
+                        {formatMoney(quote.tax_amount, quote.currency, locale)}
                       </span>
                     </div>
                   )}
                   <div className="flex items-end justify-between border-t border-zinc-300 pt-3">
-                    <span className="font-semibold text-zinc-950">Total</span>
+                    <span className="font-semibold text-zinc-950">
+                      {t("Total")}
+                    </span>
                     <span className="text-xl font-semibold tabular-nums text-zinc-950">
-                      {formatMoney(quote.total, quote.currency)}
+                      {formatMoney(quote.total, quote.currency, locale)}
                     </span>
                   </div>
                 </div>
               </div>
               {quote.notes && (
                 <div className="border-t border-zinc-200 px-4 py-4 sm:px-6">
-                  <h2 className="text-sm font-semibold text-zinc-950">Notes</h2>
+                  <h2 className="text-sm font-semibold text-zinc-950">
+                    {t("Notes")}
+                  </h2>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-600">
                     {quote.notes}
                   </p>
                 </div>
               )}
             </Card>
+
+            <OwnerPayment
+              quoteId={quote.id}
+              status={quote.status}
+              total={quote.total}
+              currency={quote.currency}
+            />
 
             <Card className="overflow-hidden">
               <PhotoManager
@@ -221,17 +253,17 @@ export default async function QuoteDetailsPage({
 
           <aside>
             <Card className="p-4 sm:p-5">
-              <h2 className="font-semibold text-zinc-950">Customer</h2>
+              <h2 className="font-semibold text-zinc-950">{t("Customer")}</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div>
-                  <dt className="text-zinc-500">Name</dt>
+                  <dt className="text-zinc-500">{t("Name")}</dt>
                   <dd className="mt-0.5 font-medium text-zinc-900">
                     {quote.customer_name}
                   </dd>
                 </div>
                 {quote.customer_email && (
                   <div>
-                    <dt className="text-zinc-500">Email</dt>
+                    <dt className="text-zinc-500">{t("Email")}</dt>
                     <dd className="mt-0.5 break-all font-medium text-zinc-900">
                       {quote.customer_email}
                     </dd>
@@ -239,11 +271,11 @@ export default async function QuoteDetailsPage({
                 )}
                 {quote.customer_phone && (
                   <div>
-                    <dt className="text-zinc-500">Phone</dt>
+                    <dt className="text-zinc-500">{t("Phone")}</dt>
                     <dd className="mt-0.5 font-medium text-zinc-900">
                       <a
                         href={`tel:${quote.customer_phone}`}
-                        className="underline-offset-4 hover:text-brand-800 hover:underline"
+                        className="inline-flex min-h-11 items-center underline-offset-4 hover:text-brand-800 hover:underline"
                       >
                         {quote.customer_phone}
                       </a>
@@ -252,17 +284,18 @@ export default async function QuoteDetailsPage({
                 )}
                 {quote.expires_at && (
                   <div>
-                    <dt className="text-zinc-500">Valid until</dt>
+                    <dt className="text-zinc-500">{t("Valid until")}</dt>
                     <dd className="mt-0.5 font-medium text-zinc-900">
-                      {formatExpiryDate(quote.expires_at)}
+                      {formatExpiryDate(quote.expires_at, locale)}
                     </dd>
                   </div>
                 )}
               </dl>
               <div className="mt-5 border-t border-zinc-200 pt-4">
                 <p className="text-xs leading-5 text-zinc-500">
-                  Customer portal links are private capabilities. Share them only
-                  with the intended customer.
+                  {t(
+                    "Customer portal links are private capabilities. Share them only with the intended customer.",
+                  )}{" "}
                 </p>
               </div>
             </Card>

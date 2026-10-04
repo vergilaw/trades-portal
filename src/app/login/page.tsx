@@ -1,3 +1,5 @@
+import { getLocale } from "@/lib/i18n/server";
+import { createTranslator, translate } from "@/lib/i18n/shared";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -7,15 +9,18 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Sign in",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: translate("Sign in", await getLocale()) };
+}
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
 
@@ -31,8 +36,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthShell
-      title="Welcome back"
-      description="Sign in to create and manage your customer quotes."
+      title={t("Welcome back")}
+      description={t("Sign in to create and manage your customer quotes.")}
     >
       <LoginForm initialError={initialError} />
     </AuthShell>

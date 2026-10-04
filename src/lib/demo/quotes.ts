@@ -33,7 +33,15 @@ function shiftDays(from: Date, days: number, endOfDay = false) {
 
 function quote(
   now: Date,
-  input: Omit<DemoQuote, "subtotal" | "taxAmount" | "total" | "createdAt" | "expiresAt" | "respondedAt"> & {
+  input: Omit<
+    DemoQuote,
+    | "subtotal"
+    | "taxAmount"
+    | "total"
+    | "createdAt"
+    | "expiresAt"
+    | "respondedAt"
+  > & {
     createdDaysAgo: number;
     expiresInDays?: number;
     respondedDaysAgo?: number;
@@ -77,9 +85,21 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       expiresInDays: 14,
       respondedDaysAgo: 39,
       items: [
-        { description: "18-way switchboard and RCBO hardware", quantity: 1, unitPrice: 8_600_000 },
-        { description: "Licensed electrician labour", quantity: 8, unitPrice: 650_000 },
-        { description: "Safety testing and compliance report", quantity: 1, unitPrice: 1_200_000 },
+        {
+          description: "18-way switchboard and RCBO hardware",
+          quantity: 1,
+          unitPrice: 8_600_000,
+        },
+        {
+          description: "Licensed electrician labour",
+          quantity: 8,
+          unitPrice: 650_000,
+        },
+        {
+          description: "Safety testing and compliance report",
+          quantity: 1,
+          unitPrice: 1_200_000,
+        },
       ],
     }),
     quote(now, {
@@ -94,8 +114,16 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 28,
       respondedDaysAgo: 25,
       items: [
-        { description: "Deep clean split-system unit", quantity: 3, unitPrice: 850_000 },
-        { description: "Drain line treatment", quantity: 3, unitPrice: 180_000 },
+        {
+          description: "Deep clean split-system unit",
+          quantity: 3,
+          unitPrice: 850_000,
+        },
+        {
+          description: "Drain line treatment",
+          quantity: 3,
+          unitPrice: 180_000,
+        },
       ],
     }),
     quote(now, {
@@ -110,9 +138,17 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 5,
       expiresInDays: 9,
       items: [
-        { description: "Leak detection and access", quantity: 1, unitPrice: 1_350_000 },
+        {
+          description: "Leak detection and access",
+          quantity: 1,
+          unitPrice: 1_350_000,
+        },
         { description: "Pipework repair", quantity: 1, unitPrice: 2_400_000 },
-        { description: "Waterproofing and tile reinstatement", quantity: 1, unitPrice: 4_800_000 },
+        {
+          description: "Waterproofing and tile reinstatement",
+          quantity: 1,
+          unitPrice: 4_800_000,
+        },
       ],
     }),
     quote(now, {
@@ -127,8 +163,16 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 2,
       expiresInDays: 19,
       items: [
-        { description: "600 kg sliding gate motor kit", quantity: 1, unitPrice: 12_900_000 },
-        { description: "Installation and commissioning", quantity: 1, unitPrice: 3_200_000 },
+        {
+          description: "600 kg sliding gate motor kit",
+          quantity: 1,
+          unitPrice: 12_900_000,
+        },
+        {
+          description: "Installation and commissioning",
+          quantity: 1,
+          unitPrice: 3_200_000,
+        },
       ],
     }),
     quote(now, {
@@ -143,9 +187,21 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 18,
       respondedDaysAgo: 16,
       items: [
-        { description: "Stainless double-bowl sink", quantity: 1, unitPrice: 3_600_000 },
-        { description: "Pull-out mixer tap", quantity: 1, unitPrice: 2_200_000 },
-        { description: "Plumbing labour and fittings", quantity: 1, unitPrice: 1_850_000 },
+        {
+          description: "Stainless double-bowl sink",
+          quantity: 1,
+          unitPrice: 3_600_000,
+        },
+        {
+          description: "Pull-out mixer tap",
+          quantity: 1,
+          unitPrice: 2_200_000,
+        },
+        {
+          description: "Plumbing labour and fittings",
+          quantity: 1,
+          unitPrice: 1_850_000,
+        },
       ],
     }),
     quote(now, {
@@ -160,8 +216,16 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 35,
       expiresInDays: -7,
       items: [
-        { description: "40 W LED panel light", quantity: 24, unitPrice: 780_000 },
-        { description: "After-hours installation", quantity: 16, unitPrice: 520_000 },
+        {
+          description: "40 W LED panel light",
+          quantity: 24,
+          unitPrice: 780_000,
+        },
+        {
+          description: "After-hours installation",
+          quantity: 16,
+          unitPrice: 520_000,
+        },
         { description: "Lamp recycling fee", quantity: 1, unitPrice: 950_000 },
       ],
     }),
@@ -177,10 +241,26 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 1,
       expiresInDays: 29,
       items: [
-        { description: "200 L heat-pump water heater", quantity: 1, unitPrice: 34_500_000 },
-        { description: "Plumbing and valves", quantity: 1, unitPrice: 4_600_000 },
-        { description: "Dedicated electrical circuit", quantity: 1, unitPrice: 3_800_000 },
-        { description: "Installation and commissioning", quantity: 1, unitPrice: 5_200_000 },
+        {
+          description: "200 L heat-pump water heater",
+          quantity: 1,
+          unitPrice: 34_500_000,
+        },
+        {
+          description: "Plumbing and valves",
+          quantity: 1,
+          unitPrice: 4_600_000,
+        },
+        {
+          description: "Dedicated electrical circuit",
+          quantity: 1,
+          unitPrice: 3_800_000,
+        },
+        {
+          description: "Installation and commissioning",
+          quantity: 1,
+          unitPrice: 5_200_000,
+        },
       ],
     }),
     quote(now, {
@@ -195,9 +275,21 @@ export function buildDemoQuotes(now = new Date()): DemoQuote[] {
       createdDaysAgo: 60,
       respondedDaysAgo: 56,
       items: [
-        { description: "4K PoE turret camera", quantity: 4, unitPrice: 3_150_000 },
-        { description: "CAT6 cable and containment", quantity: 180, unitPrice: 28_000 },
-        { description: "Installation and system configuration", quantity: 2, unitPrice: 3_400_000 },
+        {
+          description: "4K PoE turret camera",
+          quantity: 4,
+          unitPrice: 3_150_000,
+        },
+        {
+          description: "CAT6 cable and containment",
+          quantity: 180,
+          unitPrice: 28_000,
+        },
+        {
+          description: "Installation and system configuration",
+          quantity: 2,
+          unitPrice: 3_400_000,
+        },
       ],
     }),
   ];

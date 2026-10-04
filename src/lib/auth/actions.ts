@@ -30,10 +30,16 @@ function friendlyAuthError(message: string) {
   if (normalized.includes("email not confirmed")) {
     return "Please confirm your email before signing in.";
   }
-  if (normalized.includes("already registered") || normalized.includes("already exists")) {
+  if (
+    normalized.includes("already registered") ||
+    normalized.includes("already exists")
+  ) {
     return "An account with this email already exists. Try signing in instead.";
   }
-  if (normalized.includes("rate limit") || normalized.includes("too many requests")) {
+  if (
+    normalized.includes("rate limit") ||
+    normalized.includes("too many requests")
+  ) {
     return "Too many attempts. Please wait a moment and try again.";
   }
   if (normalized.includes("password")) {
@@ -118,7 +124,8 @@ export async function signupAction(
   }
 
   return {
-    message: "Account created. Check your inbox to confirm your email, then sign in.",
+    message:
+      "Account created. Check your inbox to confirm your email, then sign in.",
   };
 }
 

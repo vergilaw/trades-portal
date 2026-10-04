@@ -1,11 +1,12 @@
 "use client";
+import { useI18n } from "@/components/i18n/provider";
 
 import { Camera, Trash, UploadSimple } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useRef, useState } from "react";
 
-import { Button, buttonStyles } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   compressQuotePhoto,
@@ -38,6 +39,8 @@ export function PhotoManager({
   publicToken,
   initialPhotos,
 }: PhotoManagerProps) {
+  const { t, text } = useI18n();
+
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState(initialPhotos);
@@ -54,7 +57,9 @@ export function PhotoManager({
       setError(
         remaining === 0
           ? "This quote already has the maximum of 10 photos."
-          : `Choose no more than ${remaining} additional photo${remaining === 1 ? "" : "s"}.`,
+          : t("Choose no more than {count} additional photos.", {
+              count: remaining,
+            }),
       );
       return;
     }
@@ -65,7 +70,12 @@ export function PhotoManager({
     const failures: string[] = [];
 
     for (const [index, sourceFile] of files.entries()) {
-      setProgress(`Compressing and uploading ${index + 1} of ${files.length}`);
+      setProgress(
+        t("Compressing and uploading {current} of {count}", {
+          current: index + 1,
+          count: files.length,
+        }),
+      );
       let storagePath = "";
 
       try {
@@ -80,7 +90,9 @@ export function PhotoManager({
           });
 
         if (uploadError) {
-          throw new Error("Upload failed. Check your connection and try again.");
+          throw new Error(
+            "Upload failed. Check your connection and try again.",
+          );
         }
 
         const { data: photo, error: metadataError } = await supabase
@@ -98,7 +110,9 @@ export function PhotoManager({
           .single();
 
         if (metadataError || !photo) {
-          await supabase.storage.from(QUOTE_IMAGES_BUCKET).remove([storagePath]);
+          await supabase.storage
+            .from(QUOTE_IMAGES_BUCKET)
+            .remove([storagePath]);
           throw new Error(
             metadataError?.message.includes("at most 10")
               ? "This quote already has the maximum of 10 photos."
@@ -106,12 +120,15 @@ export function PhotoManager({
           );
         }
 
-        const { data: signedPhoto, error: signedUrlError } = await supabase.storage
-          .from(QUOTE_IMAGES_BUCKET)
-          .createSignedUrl(storagePath, SIGNED_PHOTO_URL_TTL_SECONDS);
+        const { data: signedPhoto, error: signedUrlError } =
+          await supabase.storage
+            .from(QUOTE_IMAGES_BUCKET)
+            .createSignedUrl(storagePath, SIGNED_PHOTO_URL_TTL_SECONDS);
 
         if (signedUrlError || !signedPhoto?.signedUrl) {
-          throw new Error("The photo was saved but its preview could not be loaded.");
+          throw new Error(
+            "The photo was saved but its preview could not be loaded.",
+          );
         }
 
         setPhotos((current) => [
@@ -132,7 +149,7 @@ export function PhotoManager({
           uploadError instanceof Error
             ? uploadError.message
             : "The photo could not be uploaded.";
-        failures.push(`${sourceFile.name}: ${message}`);
+        failures.push(`${sourceFile.name}: ${text(message)}`);
       }
     }
 
@@ -168,7 +185,9 @@ export function PhotoManager({
       .remove([photo.storagePath]);
 
     if (storageError) {
-      setError("The photo was removed from the quote, but storage cleanup failed.");
+      setError(
+        "The photo was removed from the quote, but storage cleanup failed.",
+      );
     }
 
     setDeletingId(null);
@@ -182,12 +201,13 @@ export function PhotoManager({
           <div className="flex items-center gap-2">
             <Camera aria-hidden="true" size={20} className="text-brand-700" />
             <h2 id="job-photos-heading" className="font-semibold text-zinc-950">
-              Job photos
+              {t("Job photos")}{" "}
             </h2>
           </div>
           <p className="mt-1.5 max-w-xl text-sm leading-6 text-zinc-600">
-            Add up to 10 before and after photos. Images are resized and
-            compressed in your browser before upload.
+            {t(
+              "Add up to 10 before and after photos. Images are resized and compressed in your browser before upload.",
+            )}{" "}
           </p>
         </div>
         <span className="shrink-0 font-mono text-sm text-zinc-500">
@@ -198,7 +218,7 @@ export function PhotoManager({
       <div className="border-b border-zinc-200 bg-zinc-50 p-4 sm:p-6">
         <fieldset>
           <legend className="text-sm font-semibold text-zinc-900">
-            Photo type
+            {t("Photo type")}{" "}
           </legend>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {phaseOptions.map((option) => (
@@ -216,10 +236,10 @@ export function PhotoManager({
                 )}
               >
                 <span className="block text-sm font-semibold text-zinc-950">
-                  {option.label}
+                  {text(option.label)}
                 </span>
                 <span className="mt-0.5 block text-xs text-zinc-500">
-                  {option.description}
+                  {text(option.description)}
                 </span>
               </button>
             ))}
@@ -235,32 +255,30 @@ export function PhotoManager({
             accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
             disabled={uploading || remaining === 0}
-            className="sr-only"
+            tabIndex={-1}
+            className="hidden"
           />
-          <label
-            htmlFor="quote-photo-input"
-            className={buttonStyles({
-              variant: "primary",
-              className: cn(
-                "w-full cursor-pointer sm:w-auto",
-                (uploading || remaining === 0) &&
-                  "pointer-events-none opacity-55",
-              ),
-            })}
+          <Button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading || remaining === 0}
+            className="w-full sm:w-auto"
           >
             <UploadSimple aria-hidden="true" size={18} weight="bold" />
-            {uploading ? "Processing photos..." : "Choose photos"}
-          </label>
+            {uploading ? t("Processing photos...") : t("Choose photos")}
+          </Button>
           <p className="text-xs leading-5 text-zinc-500">
-            JPG, PNG, or WebP. Maximum 2MB after compression.
+            {t("JPG, PNG, or WebP. Maximum 2MB after compression.")}{" "}
           </p>
         </div>
 
         <div aria-live="polite">
-          {progress && <p className="mt-3 text-sm text-brand-800">{progress}</p>}
+          {progress && (
+            <p className="mt-3 text-sm text-brand-800">{progress}</p>
+          )}
           {error && (
             <p role="alert" className="mt-3 text-sm font-medium text-red-700">
-              {error}
+              {text(error)}
             </p>
           )}
         </div>
@@ -269,7 +287,9 @@ export function PhotoManager({
       <div className="p-4 sm:p-6">
         {photos.length === 0 ? (
           <p className="border-l-2 border-zinc-200 pl-3 text-sm text-zinc-500">
-            No photos yet. Add evidence of the job before or after the work.
+            {t(
+              "No photos yet. Add evidence of the job before or after the work.",
+            )}{" "}
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -282,13 +302,16 @@ export function PhotoManager({
                 >
                   <Image
                     src={photo.signedUrl}
-                    alt={`${photo.phase === "before" ? "Before" : "After"} work photo`}
+                    alt={t("{phase} work photo", {
+                      phase:
+                        photo.phase === "before" ? t("Before") : t("After"),
+                    })}
                     fill
                     sizes="(max-width: 640px) 50vw, 240px"
                     className="object-cover"
                   />
                   <span className="absolute left-2 top-2 rounded-md bg-zinc-950/80 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                    {photo.phase === "before" ? "Before" : "After"}
+                    {photo.phase === "before" ? t("Before") : t("After")}
                   </span>
                   <Button
                     type="button"
@@ -296,8 +319,11 @@ export function PhotoManager({
                     variant="danger"
                     onClick={() => deletePhoto(photo)}
                     disabled={deletingId === photo.id || uploading}
-                    aria-label={`Delete ${photo.phase} photo`}
-                    className="absolute bottom-2 right-2 size-9"
+                    aria-label={t("Delete {phase} photo", {
+                      phase:
+                        photo.phase === "before" ? t("Before") : t("After"),
+                    })}
+                    className="absolute bottom-2 right-2"
                   >
                     <Trash aria-hidden="true" size={17} weight="bold" />
                   </Button>

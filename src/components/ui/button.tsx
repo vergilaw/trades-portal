@@ -23,9 +23,10 @@ export function buttonStyles({
         variant === "primary",
       "border border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 hover:bg-zinc-50":
         variant === "secondary",
-      "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950": variant === "ghost",
+      "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950":
+        variant === "ghost",
       "bg-red-600 text-white shadow-sm hover:bg-red-700": variant === "danger",
-      "h-9 px-3": size === "sm",
+      "min-h-11 px-3": size === "sm",
       "h-11 px-4": size === "md",
       "h-12 px-6 text-base": size === "lg",
       "size-11": size === "icon",
@@ -34,8 +35,7 @@ export function buttonStyles({
   );
 }
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
 }

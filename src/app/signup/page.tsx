@@ -1,3 +1,5 @@
+import { getLocale } from "@/lib/i18n/server";
+import { createTranslator, translate } from "@/lib/i18n/shared";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -7,11 +9,14 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Create account",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: translate("Create account", await getLocale()) };
+}
 
 export default async function SignupPage() {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
 
@@ -21,8 +26,10 @@ export default async function SignupPage() {
 
   return (
     <AuthShell
-      title="Create your account"
-      description="Start sending clear, professional quotes to your customers."
+      title={t("Create your account")}
+      description={t(
+        "Start sending clear, professional quotes to your customers.",
+      )}
     >
       <SignupForm />
     </AuthShell>

@@ -8,9 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export type ProfileActionState = {
   error?: string;
   message?: string;
-  fieldErrors?: Partial<
-    Record<"fullName" | "businessName" | "phone", string>
-  >;
+  fieldErrors?: Partial<Record<"fullName" | "businessName" | "phone", string>>;
 };
 
 const phonePattern = /^[0-9+().\-\s]{7,30}$/;

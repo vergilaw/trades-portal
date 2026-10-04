@@ -1,3 +1,5 @@
+import { getLocale } from "@/lib/i18n/server";
+import { createTranslator, translate } from "@/lib/i18n/shared";
 import type { Metadata } from "next";
 import {
   CaretRight,
@@ -26,9 +28,9 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Quotes",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: translate("Quotes", await getLocale()) };
+}
 
 type DashboardPageProps = {
   searchParams: Promise<{ created?: string; status?: string; q?: string }>;
@@ -42,7 +44,12 @@ const filterOptions: Array<{ label: string; value?: QuoteDisplayStatus }> = [
   { label: "Expired", value: "expired" },
 ];
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+
   const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getClaims();
 
@@ -78,12 +85,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     : quoteRows;
   const visibleQuotes = normalizedSearch
     ? statusQuotes.filter((quote) =>
-        [
-          quote.title,
-          quote.customer_name,
-          quote.customer_email ?? "",
-          quote.id,
-        ]
+        [quote.title, quote.customer_name, quote.customer_email ?? "", quote.id]
           .join(" ")
           .toLocaleLowerCase("vi")
           .includes(normalizedSearch),
@@ -106,24 +108,31 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-950 sm:text-3xl">
-            Quotes
+            {t("Quotes")}{" "}
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-zinc-600">
-            Create quotes and track customer decisions.
+            {t("Create quotes and track customer decisions.")}{" "}
           </p>
         </div>
-        <Link href="/quote/new" className={buttonStyles({ className: "w-full sm:w-auto" })}>
+        <Link
+          href="/quote/new"
+          className={buttonStyles({ className: "w-full sm:w-auto" })}
+        >
           <Plus aria-hidden="true" size={17} weight="bold" />
-          New quote
+          {t("New quote")}{" "}
         </Link>
       </div>
 
       {createdQuote && (
         <div className="mt-6 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-900">Quote created</p>
+            <p className="text-sm font-semibold text-emerald-900">
+              {t("Quote created")}
+            </p>
             <p className="mt-0.5 text-sm text-emerald-800">
-              Copy the customer portal link and send it when you are ready.
+              {t(
+                "Copy the customer portal link and send it when you are ready.",
+              )}{" "}
             </p>
           </div>
           <div className="flex gap-2">
@@ -132,38 +141,38 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               href={`/portal/${createdQuote.public_token}`}
               className={buttonStyles({ size: "sm" })}
             >
-              View quote
+              {t("View quote")}{" "}
             </Link>
           </div>
         </div>
       )}
 
       <section
-        aria-label="Quote overview"
+        aria-label={t("Quote overview")}
         className="mt-6 grid overflow-hidden rounded-xl border border-zinc-200 bg-white sm:grid-cols-2 lg:grid-cols-4"
       >
         <div className="border-b border-zinc-200 px-4 py-4 sm:border-r lg:border-b-0 sm:px-5">
-          <p className="text-sm text-zinc-500">All quotes</p>
+          <p className="text-sm text-zinc-500">{t("All quotes")}</p>
           <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-zinc-950 tabular-nums">
             {quoteRows.length}
           </p>
         </div>
         <div className="border-b border-zinc-200 px-4 py-4 lg:border-b-0 lg:border-r sm:px-5">
-          <p className="text-sm text-zinc-500">Awaiting response</p>
+          <p className="text-sm text-zinc-500">{t("Awaiting response")}</p>
           <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-amber-700 tabular-nums">
             {pendingCount}
           </p>
         </div>
         <div className="border-b border-zinc-200 px-4 py-4 sm:border-b-0 sm:border-r sm:px-5">
-          <p className="text-sm text-zinc-500">Approved</p>
+          <p className="text-sm text-zinc-500">{t("Approved")}</p>
           <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-emerald-700 tabular-nums">
             {approvedQuotes.length}
           </p>
         </div>
         <div className="px-4 py-4 sm:px-5">
-          <p className="text-sm text-zinc-500">Approved value</p>
+          <p className="text-sm text-zinc-500">{t("Approved value")}</p>
           <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-zinc-950 tabular-nums">
-            {formatMoney(approvedValue, dashboardCurrency)}
+            {formatMoney(approvedValue, dashboardCurrency, locale)}
           </p>
         </div>
       </section>
@@ -172,19 +181,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         {quotesError ? (
           <div className="px-5 py-10 text-center">
             <h2 className="text-base font-semibold text-zinc-950">
-              Quotes could not be loaded
+              {t("Quotes could not be loaded")}{" "}
             </h2>
             <p className="mt-1.5 text-sm text-zinc-600">
-              Refresh the page to try again.
+              {t("Refresh the page to try again.")}{" "}
             </p>
           </div>
         ) : quoteRows.length === 0 ? (
           <EmptyState
-            title="No quotes yet"
-            description="Create your first quote and send your customer a link to review it."
+            title={t("No quotes yet")}
+            description={t(
+              "Create your first quote and send your customer a link to review it.",
+            )}
             action={
               <Link href="/quote/new" className={buttonStyles()}>
-                Create first quote
+                {t("Create first quote")}{" "}
               </Link>
             }
           />
@@ -193,10 +204,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <div className="border-b border-zinc-200 px-4 py-4 sm:px-5">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                <h2 className="font-semibold text-zinc-950">Quote register</h2>
-                <p className="mt-0.5 text-sm text-zinc-500">
-                  {visibleQuotes.length} of {quoteRows.length} shown
-                </p>
+                  <h2 className="font-semibold text-zinc-950">
+                    {t("Quote register")}
+                  </h2>
+                  <p className="mt-0.5 text-sm text-zinc-500">
+                    {visibleQuotes.length}
+                    {t("of")} {quoteRows.length}
+                    {t("shown")}{" "}
+                  </p>
                 </div>
                 <form className="flex w-full gap-2 lg:max-w-md" role="search">
                   {activeStatus && (
@@ -213,18 +228,18 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       name="q"
                       defaultValue={searchTerm}
                       maxLength={80}
-                      aria-label="Search quotes"
-                      placeholder="Search jobs or customers"
-                      className="h-9 pl-9"
+                      aria-label={t("Search quotes")}
+                      placeholder={t("Search jobs or customers")}
+                      className="pl-9"
                     />
                   </div>
                   <Button type="submit" variant="secondary" size="sm">
-                    Search
+                    {t("Search")}{" "}
                   </Button>
                 </form>
               </div>
               <nav
-                aria-label="Filter quotes"
+                aria-label={t("Filter quotes")}
                 className="mt-3 flex gap-1 overflow-x-auto border-t border-zinc-100 pt-3"
               >
                 {filterOptions.map((option) => {
@@ -242,13 +257,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       href={href}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "inline-flex min-h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700",
+                        "inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700",
                         isActive
                           ? "bg-zinc-900 text-white"
                           : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950",
                       )}
                     >
-                      {option.label}
+                      {translate(option.label, locale)}
                     </Link>
                   );
                 })}
@@ -259,91 +274,108 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <EmptyState
                 title={
                   searchTerm
-                    ? `No quotes match “${searchTerm}”`
-                    : `No ${activeStatus === "sent" ? "pending" : activeStatus} quotes`
+                    ? t("No quotes match “{search}”", { search: searchTerm })
+                    : t("No {status} quotes", {
+                        status: translate(
+                          activeStatus === "sent"
+                            ? "Pending"
+                            : activeStatus === "approved"
+                              ? "Approved"
+                              : activeStatus === "rejected"
+                                ? "Rejected"
+                                : "Expired",
+                          locale,
+                        ).toLowerCase(),
+                      })
                 }
-                description="Try another search or return to all quotes."
+                description={t("Try another search or return to all quotes.")}
                 action={
-                  <Link href="/dashboard" className={buttonStyles({ variant: "secondary" })}>
-                    Clear search and filters
+                  <Link
+                    href="/dashboard"
+                    className={buttonStyles({ variant: "secondary" })}
+                  >
+                    {t("Clear search and filters")}{" "}
                   </Link>
                 }
               />
             ) : (
               <>
-            <div className="hidden grid-cols-[minmax(0,1fr)_140px_130px_130px_90px] gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-medium text-zinc-600 md:grid">
-              <span>Job / customer</span>
-              <span>Quote</span>
-              <span>Date</span>
-              <span className="text-right">Total</span>
-              <span className="text-right">Status</span>
-            </div>
+                <div className="hidden grid-cols-[minmax(0,1fr)_140px_130px_130px_90px] gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-medium text-zinc-600 md:grid">
+                  <span>{t("Job / customer")}</span>
+                  <span>{t("Quote")}</span>
+                  <span>{t("Date")}</span>
+                  <span className="text-right">{t("Total")}</span>
+                  <span className="text-right">{t("Status")}</span>
+                </div>
 
-            <div className="divide-y divide-zinc-200">
-              {visibleQuotes.map((quote) => (
-                <article
-                  key={quote.id}
-                  className="px-4 py-4 transition-colors hover:bg-zinc-50 sm:px-5"
-                >
-                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px_130px_130px_90px] md:items-center md:gap-4">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/quote/${quote.id}`}
-                        className="inline-flex max-w-full items-center gap-1.5 truncate font-semibold text-zinc-950 underline-offset-4 hover:text-brand-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
-                      >
-                        <span className="truncate">{quote.title}</span>
-                        <CaretRight
-                          aria-hidden="true"
-                          size={15}
-                          className="shrink-0 text-zinc-400"
-                        />
-                      </Link>
-                      <p className="mt-0.5 truncate text-sm text-zinc-600">
-                        {quote.customer_name}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 md:hidden">
-                        <span className="font-mono">{shortQuoteId(quote.id)}</span>
-                        <time dateTime={quote.created_at}>
-                          {formatQuoteDate(quote.created_at)}
-                        </time>
-                      </div>
-                    </div>
-
-                    <span className="hidden font-mono text-xs text-zinc-600 md:block">
-                      {shortQuoteId(quote.id)}
-                    </span>
-                    <time
-                      dateTime={quote.created_at}
-                      className="hidden text-sm text-zinc-600 md:block"
+                <div className="divide-y divide-zinc-200">
+                  {visibleQuotes.map((quote) => (
+                    <article
+                      key={quote.id}
+                      className="px-4 py-4 transition-colors hover:bg-zinc-50 sm:px-5"
                     >
-                      {formatQuoteDate(quote.created_at)}
-                    </time>
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px_130px_130px_90px] md:items-center md:gap-4">
+                        <div className="min-w-0">
+                          <Link
+                            href={`/quote/${quote.id}`}
+                            className="inline-flex min-h-11 max-w-full items-center gap-1.5 truncate font-semibold text-zinc-950 underline-offset-4 hover:text-brand-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+                          >
+                            <span className="truncate">{quote.title}</span>
+                            <CaretRight
+                              aria-hidden="true"
+                              size={15}
+                              className="shrink-0 text-zinc-400"
+                            />
+                          </Link>
+                          <p className="mt-0.5 truncate text-sm text-zinc-600">
+                            {quote.customer_name}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 md:hidden">
+                            <span className="font-mono">
+                              {shortQuoteId(quote.id)}
+                            </span>
+                            <time dateTime={quote.created_at}>
+                              {formatQuoteDate(quote.created_at, locale)}
+                            </time>
+                          </div>
+                        </div>
 
-                    <div className="flex items-center justify-between md:block md:text-right">
-                      <span className="text-xs font-medium text-zinc-600 md:hidden">
-                        Total
-                      </span>
-                      <span className="text-sm font-semibold tabular-nums text-zinc-950">
-                        {formatMoney(quote.total, quote.currency)}
-                      </span>
-                    </div>
+                        <span className="hidden font-mono text-xs text-zinc-600 md:block">
+                          {shortQuoteId(quote.id)}
+                        </span>
+                        <time
+                          dateTime={quote.created_at}
+                          className="hidden text-sm text-zinc-600 md:block"
+                        >
+                          {formatQuoteDate(quote.created_at, locale)}
+                        </time>
 
-                    <div className="flex items-center justify-between md:justify-end">
-                      <span className="text-xs font-medium text-zinc-600 md:hidden">
-                        Status
-                      </span>
-                      <StatusBadge
-                        status={
-                          quote.status === "sent" && isQuoteExpired(quote.expires_at)
-                            ? "expired"
-                            : quote.status
-                        }
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+                        <div className="flex items-center justify-between md:block md:text-right">
+                          <span className="text-xs font-medium text-zinc-600 md:hidden">
+                            {t("Total")}{" "}
+                          </span>
+                          <span className="text-sm font-semibold tabular-nums text-zinc-950">
+                            {formatMoney(quote.total, quote.currency, locale)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between md:justify-end">
+                          <span className="text-xs font-medium text-zinc-600 md:hidden">
+                            {t("Status")}{" "}
+                          </span>
+                          <StatusBadge
+                            status={
+                              quote.status === "sent" &&
+                              isQuoteExpired(quote.expires_at)
+                                ? "expired"
+                                : quote.status
+                            }
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </>
             )}
           </>

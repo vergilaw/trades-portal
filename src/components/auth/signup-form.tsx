@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/components/i18n/provider";
 
 import Link from "next/link";
 import { useActionState } from "react";
@@ -13,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { signupAction } from "@/lib/auth/actions";
 
 export function SignupForm() {
+  const { t } = useI18n();
+
   const [state, formAction] = useActionState(signupAction, {});
 
   return (
@@ -22,8 +25,8 @@ export function SignupForm() {
 
       <div>
         <Label htmlFor="businessName">
-          Business or tradesperson name{" "}
-          <span className="font-normal text-zinc-500">(optional)</span>
+          {t("Business or tradesperson name")}{" "}
+          <span className="font-normal text-zinc-500">{t("(optional)")}</span>
         </Label>
         <Input
           id="businessName"
@@ -36,7 +39,7 @@ export function SignupForm() {
             state.fieldErrors?.businessName ? "business-name-error" : undefined
           }
           className="mt-1.5"
-          placeholder="Smith Electrical"
+          placeholder={t("Smith Electrical")}
         />
         <FieldError
           id="business-name-error"
@@ -45,7 +48,7 @@ export function SignupForm() {
       </div>
 
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("Email")}</Label>
         <Input
           id="email"
           name="email"
@@ -53,15 +56,17 @@ export function SignupForm() {
           autoComplete="email"
           required
           aria-invalid={Boolean(state.fieldErrors?.email)}
-          aria-describedby={state.fieldErrors?.email ? "email-error" : undefined}
+          aria-describedby={
+            state.fieldErrors?.email ? "email-error" : undefined
+          }
           className="mt-1.5"
-          placeholder="you@example.com"
+          placeholder={t("you@example.com")}
         />
         <FieldError id="email-error" message={state.fieldErrors?.email} />
       </div>
 
       <div>
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("Password")}</Label>
         <Input
           id="password"
           name="password"
@@ -74,13 +79,13 @@ export function SignupForm() {
           className="mt-1.5"
         />
         <p id="password-help" className="mt-1.5 text-xs text-zinc-500">
-          Use at least 8 characters.
+          {t("Use at least 8 characters.")}{" "}
         </p>
         <FieldError id="password-error" message={state.fieldErrors?.password} />
       </div>
 
       <div>
-        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Label htmlFor="confirmPassword">{t("Confirm password")}</Label>
         <Input
           id="confirmPassword"
           name="confirmPassword"
@@ -89,7 +94,9 @@ export function SignupForm() {
           required
           aria-invalid={Boolean(state.fieldErrors?.confirmPassword)}
           aria-describedby={
-            state.fieldErrors?.confirmPassword ? "confirm-password-error" : undefined
+            state.fieldErrors?.confirmPassword
+              ? "confirm-password-error"
+              : undefined
           }
           className="mt-1.5"
         />
@@ -99,15 +106,15 @@ export function SignupForm() {
         />
       </div>
 
-      <SubmitButton>Create account</SubmitButton>
+      <SubmitButton>{t("Create account")}</SubmitButton>
 
       <p className="text-center text-sm text-zinc-600">
-        Already have an account?{" "}
+        {t("Already have an account?")}{" "}
         <Link
           href="/login"
-          className="font-semibold text-brand-800 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+          className="inline-flex min-h-11 items-center font-semibold text-brand-800 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
         >
-          Sign in
+          {t("Sign in")}{" "}
         </Link>
       </p>
     </form>

@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f4f6f5;
+  --foreground: #18181b;
 }
 
 @theme inline {
+  --color-brand-50: #f0faf7;
+  --color-brand-100: #d4efe7;
+  --color-brand-700: #0d6f65;
+  --color-brand-800: #09594f;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -22,4 +26,28 @@ button,
 a,
 input {
   -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a,
+select {
+  touch-action: manipulation;
+}
+body {
+  overflow-wrap: break-word;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

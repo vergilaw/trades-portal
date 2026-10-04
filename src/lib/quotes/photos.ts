@@ -89,7 +89,11 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
         if (blob) {
           resolve(blob);
         } else {
-          reject(new PhotoValidationError("This browser could not compress the image."));
+          reject(
+            new PhotoValidationError(
+              "This browser could not compress the image.",
+            ),
+          );
         }
       },
       "image/webp",

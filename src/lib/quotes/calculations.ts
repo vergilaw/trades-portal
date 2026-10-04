@@ -21,8 +21,7 @@ export function calculateQuoteTotals(
 ): QuoteTotals {
   const subtotal = roundCurrency(
     items.reduce(
-      (runningTotal, item) =>
-        runningTotal + item.quantity * item.unitPrice,
+      (runningTotal, item) => runningTotal + item.quantity * item.unitPrice,
       0,
     ),
   );

@@ -159,7 +159,9 @@ export function parsePortalQuote(value: Json): PortalQuote | null {
       businessName: contractor.businessName,
       phone: contractor.phone,
     },
-    items: items.filter((item): item is NonNullable<typeof item> => item !== null),
+    items: items.filter(
+      (item): item is NonNullable<typeof item> => item !== null,
+    ),
     photos: photos.filter(
       (photo): photo is NonNullable<typeof photo> => photo !== null,
     ),

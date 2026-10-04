@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/components/i18n/provider";
 
 import { useFormStatus } from "react-dom";
 import { Check, X } from "@phosphor-icons/react";
@@ -6,11 +7,9 @@ import { Check, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { respondToQuoteAction } from "@/lib/quotes/actions";
 
-function ResponseButton({
-  decision,
-}: {
-  decision: "approved" | "rejected";
-}) {
+function ResponseButton({ decision }: { decision: "approved" | "rejected" }) {
+  const { t } = useI18n();
+
   const { pending } = useFormStatus();
 
   return (
@@ -27,10 +26,10 @@ function ResponseButton({
           <X aria-hidden="true" weight="bold" />
         ))}
       {pending
-        ? "Saving response..."
+        ? t("Saving response...")
         : decision === "approved"
-          ? "Approve quote"
-          : "Reject"}
+          ? t("Approve quote")
+          : t("Reject")}
     </Button>
   );
 }

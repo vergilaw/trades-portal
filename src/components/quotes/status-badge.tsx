@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge";
+import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/shared";
 import {
   quoteStatusLabels,
   type QuoteDisplayStatus,
@@ -15,6 +17,10 @@ const tones: Record<
   expired: "neutral",
 };
 
-export function StatusBadge({ status }: { status: QuoteDisplayStatus }) {
-  return <Badge tone={tones[status]}>{quoteStatusLabels[status]}</Badge>;
+export async function StatusBadge({ status }: { status: QuoteDisplayStatus }) {
+  return (
+    <Badge tone={tones[status]}>
+      {translate(quoteStatusLabels[status], await getLocale())}
+    </Badge>
+  );
 }

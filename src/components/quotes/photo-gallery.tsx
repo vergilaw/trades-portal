@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/shared";
 
 import type { QuotePhotoView } from "@/lib/quotes/photos";
 import type { QuotePhotoPhase } from "@/types";
@@ -13,14 +15,15 @@ const sections: Array<{ phase: QuotePhotoPhase; label: string }> = [
   { phase: "after", label: "After" },
 ];
 
-export function PhotoGallery({
+export async function PhotoGallery({
   photos,
   emptyMessage = "No job photos have been added.",
 }: PhotoGalleryProps) {
+  const locale = await getLocale();
   if (photos.length === 0) {
     return (
       <p className="border-l-2 border-zinc-200 pl-3 text-sm text-zinc-500">
-        {emptyMessage}
+        {translate(emptyMessage, locale)}
       </p>
     );
   }
@@ -38,7 +41,7 @@ export function PhotoGallery({
                 id={`photo-group-${phase}`}
                 className="text-sm font-semibold text-zinc-900"
               >
-                {label}
+                {translate(label, locale)}
               </h3>
               <span className="text-xs tabular-nums text-zinc-500">
                 {phasePhotos.length}
@@ -55,7 +58,9 @@ export function PhotoGallery({
                 >
                   <Image
                     src={photo.signedUrl}
-                    alt={`${label} work photo`}
+                    alt={translate("{phase} work photo", locale, {
+                      phase: translate(label, locale),
+                    })}
                     fill
                     sizes="(max-width: 640px) 50vw, 220px"
                     className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"

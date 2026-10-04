@@ -1,3 +1,5 @@
+import { getLocale } from "@/lib/i18n/server";
+import { createTranslator, translate } from "@/lib/i18n/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -9,11 +11,14 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Create quote",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: translate("Create quote", await getLocale()) };
+}
 
 export default async function NewQuotePage() {
+  const locale = await getLocale();
+  const t = createTranslator(locale);
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 
@@ -29,15 +34,17 @@ export default async function NewQuotePage() {
           className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
         >
           <ArrowLeft aria-hidden="true" weight="bold" />
-          Back to quotes
+          {t("Back to quotes")}{" "}
         </Link>
 
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-950 sm:text-3xl">
-            Create quote
+            {t("Create quote")}{" "}
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-zinc-600">
-            Add the customer and work details. You will get a portal link to share.
+            {t(
+              "Add the customer and work details. You will get a portal link to share.",
+            )}{" "}
           </p>
         </div>
 
