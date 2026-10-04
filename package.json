@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/quotes/*.test.ts"
+    "test": "tsx --test src/lib/quotes/*.test.ts src/lib/payments/*.test.ts src/lib/i18n/*.test.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -18,17 +18,22 @@
     "@supabase/supabase-js": "^2.117.2",
     "clsx": "^2.1.1",
     "next": "^16.3.7",
+    "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9",
     "eslint-config-next": "^16.3.7",
+    "jsqr": "^1.4.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
