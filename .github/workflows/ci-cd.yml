@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   verify:
-    name: Lint and build
+    name: Lint, tests and build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -36,6 +36,20 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Test UI and signed webhook in isolated database
+        run: npm run test:e2e
+
+      - name: Save UI failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: test-results/
+          retention-days: 7
 
       - name: Build
         run: npm run build

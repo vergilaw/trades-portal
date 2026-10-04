@@ -14,6 +14,7 @@ const supabaseImagePattern = supabaseUrl
   : null;
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   agentRules: false,
   images: {
     remotePatterns: supabaseImagePattern ? [supabaseImagePattern] : [],

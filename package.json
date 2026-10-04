@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/quotes/*.test.ts src/lib/payments/*.test.ts src/lib/i18n/*.test.ts"
+    "test": "tsx --test src/lib/quotes/*.test.ts src/lib/payments/*.test.ts src/lib/i18n/*.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
