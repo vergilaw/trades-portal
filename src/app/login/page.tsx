@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 type LoginPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; password_updated?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       title={t("Welcome back")}
       description={t("Sign in to create and manage your customer quotes.")}
     >
-      <LoginForm initialError={initialError} />
+      <LoginForm initialError={initialError} passwordUpdated={params.password_updated === "1"} />
     </AuthShell>
   );
 }

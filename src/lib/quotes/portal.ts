@@ -12,6 +12,7 @@ export type PortalQuote = {
   taxRate: number;
   taxAmount: number;
   total: number;
+  createdAt?: string;
   expiresAt: string | null;
   respondedAt: string | null;
   contractor: {
@@ -131,6 +132,7 @@ export function parsePortalQuote(value: Json): PortalQuote | null {
     !isNumber(value.taxRate) ||
     !isNumber(value.taxAmount) ||
     !isNumber(value.total) ||
+    !(value.createdAt === undefined || isString(value.createdAt)) ||
     !(value.expiresAt === null || isString(value.expiresAt)) ||
     !(value.respondedAt === null || isString(value.respondedAt)) ||
     !isString(contractor.name) ||
@@ -152,6 +154,7 @@ export function parsePortalQuote(value: Json): PortalQuote | null {
     taxRate: value.taxRate,
     taxAmount: value.taxAmount,
     total: value.total,
+    createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
     expiresAt: value.expiresAt,
     respondedAt: value.respondedAt,
     contractor: {

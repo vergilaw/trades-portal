@@ -10,6 +10,7 @@ import { PortalPayment } from "@/components/payments/portal-payment";
 import { ResponseActions } from "@/components/quotes/response-actions";
 import { StatusBadge } from "@/components/quotes/status-badge";
 import { Brand } from "@/components/ui/brand";
+import { DownloadPdfButton } from "@/components/quotes/download-pdf-button";
 import { Card } from "@/components/ui/card";
 import {
   formatExpiryDate,
@@ -70,6 +71,7 @@ export default async function PortalPage({
     <main className="min-h-[100dvh] bg-[#f4f6f5] px-4 py-5 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-3xl">
         <div className="mb-4 flex justify-end">
+          <div className="mr-auto"><DownloadPdfButton path={`/portal/${token}/pdf`} quoteId={quote.id} /></div>
           <LanguageSwitcher />
         </div>
         <div className="mb-5 flex items-center justify-between gap-4">

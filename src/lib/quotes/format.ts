@@ -4,7 +4,7 @@ import { intlLocale, type Locale } from "@/lib/i18n/shared";
 export type QuoteDisplayStatus = QuoteStatus | "expired";
 
 export function formatMoney(
-  amount: number,
+  amount: number | string,
   currency = "VND",
   locale: Locale = "vi",
 ) {
@@ -12,7 +12,8 @@ export function formatMoney(
     style: "currency",
     currency,
     maximumFractionDigits: currency === "VND" ? 0 : 2,
-  }).format(amount);
+    // Intl accepts decimal strings without converting them to a lossy Number.
+  }).format(amount as number);
 }
 
 export function formatQuoteDate(value: string, locale: Locale = "vi") {

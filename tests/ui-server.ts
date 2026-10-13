@@ -3,7 +3,7 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
-import { createHmac, randomBytes } from "node:crypto";
+import { createHmac, createHash, randomBytes } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 async function main() {
   const owner = "11111111-1111-4111-8111-111111111111";
@@ -25,6 +25,8 @@ async function main() {
     "20261003000000_manual_payments.sql",
     "20261004000000_sepay_reconciliation.sql",
     "20261004010000_quote_edit_alias.sql",
+    "20261013000000_dashboard_summary.sql",
+    "20261013010000_portal_quote_created_at.sql",
   ])
     await db.exec(
       (await readFile(`supabase/migrations/${name}`, "utf8")).replace(
@@ -58,22 +60,76 @@ async function main() {
     user_metadata: {},
     identities: [],
   };
-  function token() {
+  const otherUser = {
+    ...user,
+    id: "22222222-2222-4222-8222-222222222222",
+    email: "other@example.test",
+  };
+  await db.query("insert into auth.users(id,email) values($1,$2)", [
+    otherUser.id,
+    otherUser.email,
+  ]);
+  let userPassword = "fixture-password";
+  let summaryUnavailable = false;
+  const revoked = new Set<string>();
+  const refreshTokens = new Map<string, typeof user>();
+  const emailLinks: Array<{
+    code: string;
+    email: string;
+    mode: string;
+    redirectTo: string;
+    challenge: string;
+    used: boolean;
+  }> = [];
+  function token(identity = user) {
     const head = Buffer.from(
         JSON.stringify({ alg: "HS256", typ: "JWT" }),
       ).toString("base64url"),
       body = Buffer.from(
         JSON.stringify({
-          sub: owner,
+          sub: identity.id,
           role: "authenticated",
           aud: "authenticated",
           iss: "http://127.0.0.1:54321/auth/v1",
           iat: Math.floor(Date.now() / 1000),
           exp: Math.floor(Date.now() / 1000) + 3600,
-          email: user.email,
+          email: identity.email,
+          jti: randomBytes(16).toString("hex"),
         }),
       ).toString("base64url");
     return `${head}.${body}.${createHmac("sha256", "local-test-jwt").update(`${head}.${body}`).digest("base64url")}`;
+  }
+  function identityFor(authorization?: string) {
+    const value = authorization?.replace(/^Bearer /, "") ?? "";
+    if (revoked.has(value)) return null;
+    const [head, payload, signature] = value.split(".");
+    if (
+      !head ||
+      !payload ||
+      signature !==
+        createHmac("sha256", "local-test-jwt")
+          .update(`${head}.${payload}`)
+          .digest("base64url")
+    )
+      return null;
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
+    if (claims.exp <= Date.now() / 1000) return null;
+    return claims.sub === owner
+      ? user
+      : claims.sub === otherUser.id
+        ? otherUser
+        : null;
+  }
+  function session(identity = user) {
+    const refresh = randomBytes(20).toString("hex");
+    refreshTokens.set(refresh, identity);
+    return {
+      access_token: token(identity),
+      refresh_token: refresh,
+      token_type: "bearer",
+      expires_in: 3600,
+      user: identity,
+    };
   }
   const allowedTables = new Set([
     "profiles",
@@ -112,8 +168,91 @@ async function main() {
       res.end("{}");
       return;
     }
+    if (url.pathname === "/__fixture/emails") {
+      res.end(JSON.stringify(emailLinks));
+      return;
+    }
+    if (url.pathname === "/__fixture/reset-auth") {
+      userPassword = "fixture-password";
+      emailLinks.length = 0;
+      summaryUnavailable = false;
+      res.end("{}");
+      return;
+    }
+    if (url.pathname === "/__fixture/summary-error") {
+      summaryUnavailable = body.enabled === true;
+      res.end("{}");
+      return;
+    }
+    if (
+      url.pathname === "/auth/v1/recover" ||
+      url.pathname === "/auth/v1/resend"
+    ) {
+      if (body.email === "rate-limited@example.test") {
+        res.statusCode = 429;
+        res.end(
+          JSON.stringify({
+            code: "over_email_send_rate_limit",
+            msg: "Email rate limit exceeded",
+          }),
+        );
+        return;
+      }
+      if (body.email === user.email)
+        emailLinks.push({
+          code: randomBytes(16).toString("hex"),
+          email: String(body.email),
+          mode: url.pathname.endsWith("recover") ? "recovery" : "confirmation",
+          redirectTo: url.searchParams.get("redirect_to") ?? "",
+          challenge: String(body.code_challenge ?? ""),
+          used: false,
+        });
+      res.end("{}");
+      return;
+    }
     if (url.pathname === "/auth/v1/token") {
-      if (body.email !== user.email || body.password !== "fixture-password") {
+      if (url.searchParams.get("grant_type") === "pkce") {
+        const email = emailLinks.find(
+          (e) => e.code === body.auth_code && !e.used,
+        );
+        const challenge = createHash("sha256")
+          .update(String(body.code_verifier ?? ""))
+          .digest("base64url");
+        if (!email || email.challenge !== challenge) {
+          res.statusCode = 400;
+          res.end(
+            JSON.stringify({
+              code: "bad_code_verifier",
+              msg: "Invalid or expired code",
+            }),
+          );
+          return;
+        }
+        email.used = true;
+        res.end(JSON.stringify(session()));
+        return;
+      }
+      if (url.searchParams.get("grant_type") === "refresh_token") {
+        const identity = refreshTokens.get(String(body.refresh_token));
+        if (!identity) {
+          res.statusCode = 401;
+          res.end("{}");
+          return;
+        }
+        res.end(JSON.stringify(session(identity)));
+        return;
+      }
+      const identity =
+        body.email === user.email
+          ? user
+          : body.email === otherUser.email
+            ? otherUser
+            : null;
+      if (
+        !identity ||
+        body.password !==
+          (identity.id === owner ? userPassword : "fixture-password")
+      ) {
         res.statusCode = 400;
         res.end(
           JSON.stringify({
@@ -123,22 +262,33 @@ async function main() {
         );
         return;
       }
-      res.end(
-        JSON.stringify({
-          access_token: token(),
-          refresh_token: "fixture-refresh",
-          token_type: "bearer",
-          expires_in: 3600,
-          user,
-        }),
-      );
+      res.end(JSON.stringify(session(identity)));
       return;
     }
     if (url.pathname === "/auth/v1/user") {
-      res.end(JSON.stringify(user));
+      const identity = identityFor(req.headers.authorization);
+      if (!identity) {
+        res.statusCode = 401;
+        res.end(
+          JSON.stringify({ code: "bad_jwt", msg: "Auth session missing" }),
+        );
+        return;
+      }
+      if (
+        req.method === "PUT" &&
+        typeof body.password === "string" &&
+        identity.id === owner
+      )
+        userPassword = body.password;
+      res.end(JSON.stringify(identity));
       return;
     }
     if (url.pathname === "/auth/v1/logout") {
+      const identity = identityFor(req.headers.authorization);
+      revoked.add(req.headers.authorization?.replace(/^Bearer /, "") ?? "");
+      if (identity)
+        for (const [refresh, saved] of refreshTokens)
+          if (saved.id === identity.id) refreshTokens.delete(refresh);
       res.end("{}");
       return;
     }
@@ -155,15 +305,37 @@ async function main() {
     try {
       await db.exec("reset role");
       const isService = req.headers.apikey === "fixture-server-key";
-      const signed = req.headers.authorization?.startsWith("Bearer eyJ");
+      const identity = identityFor(req.headers.authorization);
+      const signed = Boolean(identity);
       await db.query("select set_config('request.jwt.claim.sub',$1,false)", [
-        signed ? owner : "",
+        identity?.id ?? "",
       ]);
       await db.exec(
         `set role ${isService ? "service_role" : signed ? "authenticated" : "anon"}`,
       );
+      if (url.pathname === "/__fixture/quote-state") {
+        if (
+          typeof body.id !== "string" ||
+          !["sent", "approved", "rejected", "draft"].includes(
+            String(body.status),
+          )
+        )
+          throw new Error("Invalid fixture state");
+        await db.exec("reset role");
+        await db.query(
+          "update public.quotes set status=$2,created_at=now()-interval '2 days',expires_at=case when $3 then now()-interval '1 day' else null end where id=$1",
+          [body.id, body.status, body.expired === true],
+        );
+        res.end("{}");
+        return;
+      }
       if (url.pathname.startsWith("/rest/v1/rpc/")) {
         const name = url.pathname.split("/").pop()!;
+        if (name === "get_dashboard_summary" && summaryUnavailable) {
+          res.statusCode = 503;
+          res.end(JSON.stringify({ code: "FIXTURE_UNAVAILABLE" }));
+          return;
+        }
         if (!/^[a-z_]+$/.test(name)) throw new Error("Invalid RPC");
         const args = Object.entries(body);
         const result = await db.query<{ value: unknown }>(

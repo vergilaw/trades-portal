@@ -17,6 +17,7 @@ import { PhotoManager } from "@/components/quotes/photo-manager";
 import { StatusBadge } from "@/components/quotes/status-badge";
 import { buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DownloadPdfButton } from "@/components/quotes/download-pdf-button";
 import {
   formatMoney,
   formatExpiryDate,
@@ -118,6 +119,7 @@ export default async function QuoteDetailsPage({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <DownloadPdfButton path={`/quote/${quote.id}/pdf`} quoteId={quote.id} />
             {quote.status === "sent" && (
               <Link
                 href={`/quote/${quote.id}/edit`}

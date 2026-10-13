@@ -22,6 +22,14 @@ export function SignupForm() {
     <form action={formAction} noValidate className="space-y-5">
       {state.error && <FormAlert tone="error">{state.error}</FormAlert>}
       {state.message && <FormAlert tone="success">{state.message}</FormAlert>}
+      {state.message && (
+        <Link
+          href="/resend-confirmation"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-800 underline"
+        >
+          {t("Resend confirmation email")}
+        </Link>
+      )}
 
       <div>
         <Label htmlFor="businessName">

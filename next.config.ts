@@ -16,6 +16,10 @@ const supabaseImagePattern = supabaseUrl
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   agentRules: false,
+  outputFileTracingIncludes: {
+    "/quote/*/pdf": ["./public/fonts/*.ttf"],
+    "/portal/*/pdf": ["./public/fonts/*.ttf"],
+  },
   images: {
     remotePatterns: supabaseImagePattern ? [supabaseImagePattern] : [],
   },

@@ -25,6 +25,8 @@ import {
 } from "@/lib/quotes/format";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { QuoteSummary } from "@/components/quotes/dashboard-summary";
+import { parseDashboardSummary } from "@/lib/quotes/summary";
 
 export const dynamic = "force-dynamic";
 
@@ -57,15 +59,17 @@ export default async function DashboardPage({
     redirect("/login");
   }
 
-  const [{ data: quotes, error: quotesError }, params] = await Promise.all([
-    supabase
-      .from("quotes")
-      .select(
-        "id, public_token, title, customer_name, customer_email, total, currency, status, expires_at, created_at",
-      )
-      .order("created_at", { ascending: false }),
-    searchParams,
-  ]);
+  const [{ data: quotes, error: quotesError }, summaryResult, params] =
+    await Promise.all([
+      supabase
+        .from("quotes")
+        .select(
+          "id, public_token, title, customer_name, customer_email, total, currency, status, expires_at, created_at",
+        )
+        .order("created_at", { ascending: false }),
+      supabase.rpc("get_dashboard_summary"),
+      searchParams,
+    ]);
   const quoteRows = quotes ?? [];
   const createdQuote = params.created
     ? quoteRows.find((quote) => quote.public_token === params.created)
@@ -91,17 +95,13 @@ export default async function DashboardPage({
           .includes(normalizedSearch),
       )
     : statusQuotes;
-  const pendingCount = quoteRows.filter(
-    (quote) => quote.status === "sent" && !isQuoteExpired(quote.expires_at),
-  ).length;
-  const approvedQuotes = quoteRows.filter(
-    (quote) => quote.status === "approved",
-  );
-  const approvedValue = approvedQuotes.reduce(
-    (total, quote) => total + quote.total,
-    0,
-  );
-  const dashboardCurrency = quoteRows[0]?.currency ?? "VND";
+  const summary = summaryResult.error
+    ? null
+    : parseDashboardSummary(summaryResult.data);
+  if (summaryResult.error)
+    console.error("Dashboard summary failed", {
+      code: summaryResult.error.code,
+    });
 
   return (
     <AppShell email={authData.claims.email}>
@@ -147,35 +147,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      <section
-        aria-label={t("Quote overview")}
-        className="mt-6 grid overflow-hidden rounded-xl border border-zinc-200 bg-white sm:grid-cols-2 lg:grid-cols-4"
-      >
-        <div className="border-b border-zinc-200 px-4 py-4 sm:border-r lg:border-b-0 sm:px-5">
-          <p className="text-sm text-zinc-500">{t("All quotes")}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-zinc-950 tabular-nums">
-            {quoteRows.length}
-          </p>
-        </div>
-        <div className="border-b border-zinc-200 px-4 py-4 lg:border-b-0 lg:border-r sm:px-5">
-          <p className="text-sm text-zinc-500">{t("Awaiting response")}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-amber-700 tabular-nums">
-            {pendingCount}
-          </p>
-        </div>
-        <div className="border-b border-zinc-200 px-4 py-4 sm:border-b-0 sm:border-r sm:px-5">
-          <p className="text-sm text-zinc-500">{t("Approved")}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-emerald-700 tabular-nums">
-            {approvedQuotes.length}
-          </p>
-        </div>
-        <div className="px-4 py-4 sm:px-5">
-          <p className="text-sm text-zinc-500">{t("Approved value")}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-zinc-950 tabular-nums">
-            {formatMoney(approvedValue, dashboardCurrency, locale)}
-          </p>
-        </div>
-      </section>
+      <QuoteSummary summary={summary} locale={locale} />
 
       <Card className="mt-6 overflow-hidden border-t-4 border-t-brand-700">
         {quotesError ? (

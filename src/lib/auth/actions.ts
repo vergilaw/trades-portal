@@ -1,13 +1,15 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { appUrl } from "@/lib/app-url";
+import { passwordErrors } from "./recovery";
 
 export type AuthActionState = {
   error?: string;
   message?: string;
+  retryAt?: number;
   fieldErrors?: Partial<
     Record<"email" | "password" | "confirmPassword" | "businessName", string>
   >;
@@ -103,15 +105,13 @@ export async function signupAction(
     return { fieldErrors };
   }
 
-  const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: businessName ? { business_name: businessName } : undefined,
-      emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
+      emailRedirectTo: appUrl("/auth/callback"),
     },
   });
 
@@ -133,4 +133,100 @@ export async function logoutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+async function sendAuthEmail(
+  mode: "recovery" | "confirmation",
+  form: FormData,
+): Promise<AuthActionState> {
+  const email = readField(form, "email").toLowerCase();
+  if (!emailPattern.test(email) || email.length > 320)
+    return { fieldErrors: { email: "Enter a valid email address." } };
+  const retryAt = Date.now() + 60_000;
+  try {
+    const client = await createClient();
+    const { error } =
+      mode === "recovery"
+        ? await client.auth.resetPasswordForEmail(email, {
+            redirectTo: appUrl("/auth/callback?next=/reset-password"),
+          })
+        : await client.auth.resend({
+            type: "signup",
+            email,
+            options: { emailRedirectTo: appUrl("/auth/callback") },
+          });
+    if (error) {
+      console.error("Auth email request failed", {
+        operation: mode,
+        code: error.code,
+        status: error.status,
+      });
+      if (error.status === 429)
+        return {
+          error: "Too many email requests. Wait before trying again.",
+          retryAt,
+        };
+      // Account-specific failures must not reveal whether the address exists.
+      if (error.status && error.status >= 500)
+        return { error: "Email could not be sent. Try again later.", retryAt };
+    }
+    return {
+      message:
+        mode === "recovery"
+          ? "If this account can receive recovery emails, a password reset link will arrive shortly."
+          : "If this account needs confirmation, a confirmation link will arrive shortly.",
+      retryAt,
+    };
+  } catch {
+    console.error("Auth email request unavailable", { operation: mode });
+    return { error: "Email could not be sent. Try again later.", retryAt };
+  }
+}
+
+export async function forgotPasswordAction(
+  _state: AuthActionState,
+  form: FormData,
+) {
+  return sendAuthEmail("recovery", form);
+}
+
+export async function resendConfirmationAction(
+  _state: AuthActionState,
+  form: FormData,
+) {
+  return sendAuthEmail("confirmation", form);
+}
+
+export async function resetPasswordAction(
+  _state: AuthActionState,
+  form: FormData,
+): Promise<AuthActionState> {
+  const client = await createClient();
+  const { data, error: sessionError } = await client.auth.getUser();
+  if (sessionError || !data.user)
+    return {
+      error: "Your reset session is unavailable. Request a new email link.",
+    };
+  const password = readField(form, "password", false);
+  const fieldErrors = passwordErrors(
+    password,
+    readField(form, "confirmPassword", false),
+  );
+  if (Object.keys(fieldErrors).length) return { fieldErrors };
+  const { error } = await client.auth.updateUser({ password });
+  if (error) {
+    console.error("Password update failed", {
+      code: error.code,
+      status: error.status,
+    });
+    return { error: friendlyAuthError(error.message) };
+  }
+  const { error: signOutError } = await client.auth.signOut();
+  if (signOutError) {
+    console.error("Password reset sign-out failed", {
+      code: signOutError.code,
+    });
+    await client.auth.signOut({ scope: "local" });
+  }
+  redirect("/login?password_updated=1");
 }

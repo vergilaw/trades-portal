@@ -13,7 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction, type AuthActionState } from "@/lib/auth/actions";
 
-export function LoginForm({ initialError }: { initialError?: string }) {
+export function LoginForm({
+  initialError,
+  passwordUpdated = false,
+}: {
+  initialError?: string;
+  passwordUpdated?: boolean;
+}) {
   const { t } = useI18n();
 
   const initialState: AuthActionState = initialError
@@ -24,6 +30,11 @@ export function LoginForm({ initialError }: { initialError?: string }) {
   return (
     <form action={formAction} noValidate className="space-y-5">
       {state.error && <FormAlert tone="error">{state.error}</FormAlert>}
+      {passwordUpdated && (
+        <FormAlert tone="success">
+          {t("Password updated. Sign in with your new password.")}
+        </FormAlert>
+      )}
 
       <div>
         <Label htmlFor="email">{t("Email")}</Label>
@@ -62,6 +73,20 @@ export function LoginForm({ initialError }: { initialError?: string }) {
       </div>
 
       <SubmitButton>{t("Sign in")}</SubmitButton>
+      <div className="flex flex-col text-sm font-semibold text-brand-800">
+        <Link
+          href="/forgot-password"
+          className="inline-flex min-h-11 items-center underline"
+        >
+          {t("Forgot password")}
+        </Link>
+        <Link
+          href="/resend-confirmation"
+          className="inline-flex min-h-11 items-center underline"
+        >
+          {t("Resend confirmation email")}
+        </Link>
+      </div>
 
       <p className="text-center text-sm text-zinc-600">
         {t("New to Trades Portal?")}{" "}

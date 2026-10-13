@@ -99,12 +99,51 @@ Keep this unset in production unless demo imports are explicitly required.
 
 Only use the Supabase publishable key in browser-accessible environment variables. Do not expose a `service_role` or secret key.
 
+Set `APP_URL=http://localhost:3000` for local development and use that same
+origin in your browser. Auth emails and PDF portal links use this canonical
+origin; production requires your deployed HTTPS origin in `APP_URL`.
+
 SePay requires three additional server environment variables: `APP_URL`,
 `SUPABASE_SECRET_KEY` and `SEPAY_ENCRYPTION_KEY`. See [the SePay setup guide](docs/sepay.md)
 for key generation, migration and per-business webhook configuration. Manual
 payments remain available without these variables.
 
 ## Database setup
+
+Supabase CLI is pinned as a development dependency, following the
+[official npm installation workflow](https://supabase.com/docs/guides/local-development/cli/getting-started).
+Run it through `npm run supabase -- <command>` or `npx supabase <command>`.
+
+To connect the CLI to your hosted project, sign in and link the project reference
+from `NEXT_PUBLIC_SUPABASE_URL` (the part before `.supabase.co`):
+
+```bash
+npm run supabase -- login
+npm run supabase -- link --project-ref <your-project-ref>
+npm run supabase -- migration list --linked
+npm run supabase -- db push --dry-run
+```
+
+After reviewing the pending migrations, apply them with
+`npm run supabase -- db push`. Linking does not apply migrations or change Auth
+settings on the hosted project. Keep access tokens and database passwords out of Git.
+
+For a separate local Supabase stack, start Docker Desktop and run:
+
+```bash
+npm run supabase:start
+npm run supabase:status
+# Stop the local stack when finished:
+npm run supabase:stop
+```
+
+The local config in `supabase/config.toml` allows the app's localhost Auth
+callback, requires passwords of at least eight characters, and uses an
+SSR-compatible confirmation template. Email confirmation is disabled locally
+by default; enable `auth.email.enable_confirmations` to test it using the local
+email inbox at `http://127.0.0.1:54324`. There is no SQL seed file; use the app's
+development demo importer when needed. To use the local stack in the app, set
+`.env.local` to the local API URL and public key shown by `supabase:status`.
 
 Database migrations are located at:
 
@@ -115,6 +154,8 @@ supabase/migrations/20260930000000_quote_mutations.sql
 supabase/migrations/20261003000000_manual_payments.sql
 supabase/migrations/20261004000000_sepay_reconciliation.sql
 supabase/migrations/20261004010000_quote_edit_alias.sql
+supabase/migrations/20261013000000_dashboard_summary.sql
+supabase/migrations/20261013010000_portal_quote_created_at.sql
 ```
 
 It creates:
@@ -150,6 +191,7 @@ For local development, configure the following under **Authentication → URL Co
 ```text
 Site URL: http://localhost:3000
 Redirect URL: http://localhost:3000/auth/callback
+Redirect URL: http://localhost:3000/auth/callback?next=/reset-password
 ```
 
 Add equivalent production URLs before deploying.
@@ -161,6 +203,30 @@ If email confirmation is enabled, update **Authentication → Email Templates �
 ```
 
 If email confirmation is disabled, a successful signup signs the user in immediately.
+
+### Account recovery
+
+The login page links to `/forgot-password` and `/resend-confirmation`.
+Recovery emails return through `/auth/callback?next=/reset-password`, then the
+authenticated user saves a new password at `/reset-password` and signs in again.
+Open the email in the same browser that requested it: the PKCE verifier is
+stored in that browser's cookies. Expired or reused links show how to request
+a replacement. Email request responses do not disclose account existence;
+the UI has a 60-second resend cooldown and also respects Supabase's email limits.
+
+The default hosted email provider has recipient and rate restrictions. Test
+real email delivery only with recipients it permits; configuring custom SMTP
+for a public launch remains separate work. Automated tests use a local Auth
+fixture that checks PKCE challenges and one-time codes, never real email.
+
+New Free-tier projects using Supabase's default email provider cannot customize
+email templates. In that setup, keep the default confirmation email and use the
+app's `/auth/callback` PKCE flow; open the confirmation in the same browser where
+signup began. Configure a custom SMTP provider before applying the token-hash
+template above. See [Supabase's email template policy](https://github.com/orgs/supabase/discussions/46599).
+The template in the local CLI config remains available for testing with the
+local email inbox. Avoid pushing the complete local config to production;
+local email confirmation is disabled by default.
 
 ## Run the application
 
@@ -204,6 +270,35 @@ Pending payment views refresh every ten seconds while the tab is visible,
 stop automatically after fifteen minutes or settlement, and retain form drafts.
 The manual refresh button starts another refresh window. Lists use tables on
 desktop and compact rows on mobile; controls have touch targets of at least 44px.
+
+## Dashboard totals and quote PDFs
+
+The dashboard overview covers all of the signed-in owner's data, independently
+of list search and filters. PostgreSQL calculates counts and monetary totals,
+so overview values are not truncated by Data API row limits. Approved, received
+and outstanding values are grouped by currency without conversion. Only `paid`
+requests count as received, including both manual and SePay receipts. Outstanding
+includes approved quotes without a payment request and excludes money already
+confirmed for those quotes. A failed overview shows an error and retry instead
+of placeholder zeroes. List pagination remains unchanged.
+
+Owners and customers can download an A4 quote PDF in either language.
+`GET /quote/[id]/pdf` requires the owner session and RLS; `GET /portal/[token]/pdf`
+uses the existing token-scoped portal RPC and its visibility/expiry rules.
+Approved customer portals and their PDFs remain available after response expiry.
+PDFs contain business and customer names, contact phone, dates, quote status,
+items, tax, totals and notes. The QR links to the canonical customer portal in
+the selected language; it is not a bank transfer QR. Photos, payment audit notes
+and SePay internals are excluded. Downloads are generated on demand with private,
+no-store responses, never saved to Supabase Storage.
+
+The renderer uses bundled Noto Sans fonts under `public/fonts` with their OFL
+license, including Vietnamese glyphs. Next.js file tracing explicitly includes
+these fonts for both PDF endpoints. `npm test` creates bilingual and five-page
+PDF fixtures under `test-results/pdf`, renders them to PNG with PDF.js, checks
+text bounds and page headers, and independently decodes the QR. Check these
+PNGs when modifying the PDF layout. After deployment, download a PDF from the
+deployed app to verify font packaging; production deployment remains manual.
 
 ## Bank transfer payments
 

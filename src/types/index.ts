@@ -237,6 +237,7 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      get_dashboard_summary: { Args: Record<string, never>; Returns: Json };
       configure_sepay_connection: {
         Args: {
           p_owner_id: string;

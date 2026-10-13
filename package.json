@@ -10,11 +10,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/quotes/*.test.ts src/lib/payments/*.test.ts src/lib/i18n/*.test.ts",
-    "test:e2e": "playwright test"
+    "test": "tsx --test src/lib/quotes/*.test.ts src/lib/payments/*.test.ts src/lib/i18n/*.test.ts src/lib/auth/*.test.ts",
+    "test:e2e": "playwright test",
+    "supabase": "supabase",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@react-pdf/renderer": "4.9.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "clsx": "^2.1.1",
@@ -26,6 +31,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@napi-rs/canvas": "1.0.11",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
@@ -35,6 +41,8 @@
     "eslint": "^9",
     "eslint-config-next": "^16.3.7",
     "jsqr": "^1.4.0",
+    "pdfjs-dist": "6.4.299",
+    "supabase": "2.120.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
